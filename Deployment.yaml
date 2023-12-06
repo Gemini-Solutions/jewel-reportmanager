@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reportmanager
+  namespace: prod-be
+  labels:
+    app: reportmanager
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: reportmanager
+  template:
+    metadata:
+      labels:
+        app: reportmanager
+    spec:
+      containers:
+        - name: reportmanager
+          image: 947681381905.dkr.ecr.ap-south-1.amazonaws.com/reportmanager:latest
+          ports:
+            - name: reportmanager
+              containerPort: 8004
+          imagePullPolicy: Always
+          env:
+            - name: ENV
+              value: prod
+      imagePullSecrets:
+        - name: regcred
