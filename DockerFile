@@ -1,7 +1,7 @@
 FROM maven:3.8.6-openjdk-11-slim
 MAINTAINER narendra.singh@geminisolutions.com
-COPY ./target/ReportManager*.jar /home/
+COPY ./target/reportamnager-1.0.0.jar /home/
 WORKDIR /home/
 EXPOSE 8004
 RUN mkdir /var/log/jewel-reportmanager
-ENTRYPOINT ["java","-jar","ReportManager-1.0.0.jar"]
+ENTRYPOINT ["java","-jar","reportmanager-1.0.0.jar"]

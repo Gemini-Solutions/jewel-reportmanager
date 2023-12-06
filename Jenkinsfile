@@ -28,7 +28,7 @@ node('maven_runner_java11') {
 				sh 'rm -rf target'
 				sh 'mvn package'
 				dir('target'){
-					sh 'chmod +x ReportManager*.jar'
+					sh 'chmod +x reportmanager-1.0.0.jar'
 				}
 			}
 		}
