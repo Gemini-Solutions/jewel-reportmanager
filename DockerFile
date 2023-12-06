@@ -1,4 +1,4 @@
-FROM maven:3.8.6-openjdk-11-slim
+FROM 947681381905.dkr.ecr.ap-south-1.amazonaws.com/maven:3.8.6-openjdk-11-slim
 MAINTAINER narendra.singh@geminisolutions.com
 COPY ./target/ReportManager*.jar /home/
 WORKDIR /home/
