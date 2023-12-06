@@ -1,7 +1,8 @@
-FROM maven:3.8.6-openjdk-11-slim
+FROM 947681381905.dkr.ecr.ap-south-1.amazonaws.com/maven:3.8.6-openjdk-11-slim
 MAINTAINER narendra.singh@geminisolutions.com
 COPY ./target/reportamanager-1.0.0.jar /home/
 WORKDIR /home/
 EXPOSE 8004
 RUN mkdir /var/log/jewel-reportmanager
 ENTRYPOINT ["java","-jar","reportmanager-1.0.0.jar"]
+

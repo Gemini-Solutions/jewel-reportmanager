@@ -19,22 +19,27 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - mvn clean package
+      - mvn clean verify sonar:sonar -Dsonar.projectKey=jewel-reportmanager-prod -Dsonar.projectName=jewel-reportmanager-prod -Dsonar.host.url=https://sonarqube.geminisolutions.com -Dsonar.login=sqp_772fa227b9c02cfe78dee0e7f83f2b7bac185e51 -Dsonar.qualitygate.wait=true
       - echo Building the Docker image...
       - docker build -f DockerFile -t $REPOSITORY_URI -t $REPOSITORY_URI:$CODEBUILD_BUILD_NUMBER .
 
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo Generating Trivy Report
-      - trivy image --timeout 30m --offline-scan $REPOSITORY_URI:$CODEBUILD_BUILD_NUMBER
-      - echo Ending Trivy Report
+      - trivy image -f json --timeout 30m --offline-scan $REPOSITORY_URI:$CODEBUILD_BUILD_NUMBER > /tmp/${REPO_NAME}_${BRANCH}_${CODEBUILD_BUILD_NUMBER}_trivy.html
+      - aws s3 cp s3://zap-trivy-reports/html.tpl .
+      - trivy image --format template --template "@./html.tpl" -o /tmp/${REPO_NAME}_${BRANCH}_${CODEBUILD_BUILD_NUMBER}_trivy.html $REPOSITORY_URI:$CODEBUILD_BUILD_NUMBER
+      - aws s3 cp /tmp/${REPO_NAME}_${BRANCH}_${CODEBUILD_BUILD_NUMBER}_trivy.html s3://zap-trivy-reports/reportManager-prod/
       - echo Pushing the Docker image...
       - docker push $REPOSITORY_URI
       - docker push $REPOSITORY_URI:$CODEBUILD_BUILD_NUMBER
       - echo Push the latest image to cluster
       - kubectl apply -f Deployment.yaml
-      - kubectl rollout restart Deployment atsinterview -n dev
+      - kubectl rollout restart Deployment reportmanager -n prod-be
+      - aws s3 cp s3://zap-trivy-reports/zap.sh .
+      - chmod +x zap.sh
+      - ./zap.sh 'https://apis.gemecosystem.com/gemEcosystemReport'
+      - aws s3 cp /zap/wrk/${REPO_NAME}_${BRANCH}_${CODEBUILD_BUILD_NUMBER}_zap.html s3://zap-trivy-reports/reportManager-prod/
 
 
 
