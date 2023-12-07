@@ -217,7 +217,8 @@ public class ReportUtils {
                     String subStepStatus = statusTestLevel;
                     ClassificationDetails classificationDetails = null;
                     if (stepsListHeaders.contains("VARIANCEID")) {
-                        Long varianceId = (Long) stepMap.get("VARIANCEID");
+                        Integer intVarianceValue  = (Integer)stepMap.get("VARIANCEID");
+                        Long varianceId = intVarianceValue != null ? intVarianceValue.longValue(): null;
                         varianceIsThere = true;
                         if(varianceList.get(varianceId) != null) {
                             clickable = true;
