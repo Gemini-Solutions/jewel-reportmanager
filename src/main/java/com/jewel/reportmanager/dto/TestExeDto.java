@@ -89,7 +89,6 @@ public class TestExeDto {
     private ClassificationDetails classificationDetails;
     private Long varianceId;
 
-    @JsonIgnore
     private List<Long> stepVarianceIds=new ArrayList<>();
 
     @JsonIgnore

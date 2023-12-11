@@ -1899,8 +1899,7 @@ public class ReportUtils {
 
     public static String checkStatusOfTestCaseByStepsIfVarianceIsThere(String tc_run_id,
                                                                        Map<Long, VarianceClassificationDto> data) {
-        Query query = new Query(Criteria.where("tc_run_id").is(tc_run_id));
-        StepsDto steps = mongoOperations.findOne(query, StepsDto.class);
+        StepsDto steps = RestApiUtils.getSteps(tc_run_id);
         if (steps.getSteps().size() == 0) {
             return "PASS";
         }
@@ -1909,7 +1908,8 @@ public class ReportUtils {
             String status = null;
             Map<String, Object> finalstep = (Map<String, Object>) step;
             if (finalstep.getOrDefault("VARIANCEID", null) != null) {
-                Long varianceId = (Long) finalstep.getOrDefault("VARIANCEID", null);
+                Integer intVarianceValue  = (Integer)finalstep.getOrDefault("VARIANCEID", null);
+                Long varianceId = intVarianceValue != null ? intVarianceValue.longValue(): null;
                 if (data.getOrDefault(varianceId, null) != null) {
                     status = "PASS";
                 } else {
