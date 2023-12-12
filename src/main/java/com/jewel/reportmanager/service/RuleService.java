@@ -1028,7 +1028,7 @@ public class RuleService {
                 testcaseLegend.add(initialTestcaseInfo);
                 data.put("legend", testcaseLegend);
 
-                List<TestExeDto> tempTest = RestApiUtils.getTestExes(s_run_id, pageNo, sort, sortedColumn, true);
+                List<TestExeDto> tempTest = RestApiUtils.fetchTestExes(s_run_id, sort, sortedColumn);
                 if (!tempTest.isEmpty()) {
                     reportUtils.populateResultWithTestExes(
                             tempTest,

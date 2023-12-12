@@ -8,7 +8,6 @@ import com.jewel.reportmanager.enums.OperationType;
 import com.mongodb.BasicDBObject;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
-import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -795,43 +794,6 @@ public class RestApiUtils {
             log.info("Steps not found for tc_run_id: {}", tc_run_id);
         }
         return null;
-    }
-
-    /**
-     * Returns a list of suite exes for s_run_id, page no., sort and sortedColumn.
-     *
-     * @param s_run_id
-     * @param pageNo
-     * @param sort
-     * @param sortedColumn
-     * @param testCaseIdNeeded
-     * @return List<TestExeDto>
-     */
-    public static List<TestExeDto> getTestExes(String s_run_id, Integer pageNo, Integer sort, String sortedColumn, Boolean testCaseIdNeeded) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
-        Map<String, Object> uriVariables = new HashMap<>();
-        uriVariables.put("s_run_id", s_run_id);
-        uriVariables.put("pageNo", pageNo);
-        uriVariables.put("sortOrder", sort);
-        uriVariables.put("sortedColumn", sortedColumn);
-        uriVariables.put("testCaseIdNeeded", testCaseIdNeeded);
-        try {
-            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/testExesList?s_run_id={s_run_id}&page={pageNo}&size=8&sortOrder={sortOrder}&sortedColumn={sortedColumn}&testCaseIdNeeded={testCaseIdNeeded}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            if(testCaseIdNeeded != null && testCaseIdNeeded) {
-                List<TestExeDto2> customList = gson.fromJson(json, new TypeToken<List<TestExeDto2>>() {
-                }.getType());
-                ModelMapper modelMapper = new ModelMapper();
-                return customList.stream().map(testExeDto2 -> modelMapper.map(testExeDto2, TestExeDto.class)).collect(Collectors.toList());
-            }
-            return gson.fromJson(json, new TypeToken<List<TestExeDto>>() {}.getType());
-        } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Test exe list is empty for s_run_id: {} pageNo: {}, sort: {} and sortedColumn: {}", s_run_id, pageNo, sort, sortedColumn);
-            return List.of();
-        }
     }
 
     public static List<TestExeDto> fetchTestExes(String s_run_id, Integer sort, String sortedColumn) {
