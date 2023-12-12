@@ -12,7 +12,6 @@ import com.mongodb.BasicDBObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
-import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -875,18 +874,23 @@ public class ReportUtils {
                 }
             }
             ObjectMapper oMapper = new ObjectMapper();
-            ModelMapper modelMapper = new ModelMapper();
-            TestExeDto2 customDto = modelMapper.map(testExe, TestExeDto2.class);
-            LinkedHashMap<String, Object> map = oMapper.convertValue(customDto, LinkedHashMap.class);
+            LinkedHashMap<String, Object> map = oMapper.convertValue(testExe, LinkedHashMap.class);
             if (testExe.getUser_defined_data() != null) {
                 map.putAll(testExe.getUser_defined_data());
             }
-            depopulateMap(map);
-            map.remove("category");
-            map.remove("machine");
-            map.remove("base_user");
-            map.remove("invoke_user");
-            map.remove("token_user");
+            map.remove("user_defined_data");
+            map.remove("steps");
+            map.remove("meta_data");
+            map.remove("ignore");
+            map.remove("log_file");
+            map.remove("result_file");
+            map.remove("s_run_id");
+            map.remove("tc_run_id");
+            map.remove("job_name");
+            map.remove("classificationDetails");
+            map.remove("varianceId");
+            map.remove("stepVarianceIds");
+            map.remove("testcase_id");
             map.remove("job_name");
             testcaseDetailsHeaders.remove("classificationDetails");
             testcaseDetailsHeaders.remove("stepVarianceIds");
@@ -1981,7 +1985,7 @@ public class ReportUtils {
     }
 
     public static Double getTimeRemainingNew(SuiteExeDto suite, List<List<DependencyTree>> ans) {
-
+        // TODO: 12/12/2023 this method is not working as expected. replace mongoOperations with rest calls on insertion manager. 
         Double remaining_time = 0.0;
 
         List<Criteria> criteria = new ArrayList<Criteria>();

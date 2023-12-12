@@ -91,7 +91,6 @@ public class TestExeDto {
 
     private List<Long> stepVarianceIds=new ArrayList<>();
 
-    @JsonIgnore
     private Long testcase_id;
 
 }
