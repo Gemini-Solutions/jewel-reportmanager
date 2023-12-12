@@ -48,7 +48,7 @@ public class RuleService {
      * @throws ParseException
      */
     public Response getRuleReport(RuleApi payload, Integer pageNo,
-                                  Integer sort, String sortedColumn) throws ParseException {
+            Integer sort, String sortedColumn) throws ParseException {
 
         if ((sort != null && sortedColumn == null) || (sort == null && sortedColumn != null)) {
             log.error("Error occurred due to records not found");
@@ -67,7 +67,8 @@ public class RuleService {
         if (user.getRole().equalsIgnoreCase(USER.toString())) {
             accessPids = RestApiUtils.getProjectRolePidList(payload.getProjectid(), ACTIVE_STATUS, username);
         } else if (user.getRole().equalsIgnoreCase(ADMIN.toString())) {
-            accessPids = RestApiUtils.getProjectPidListForRealCompanyNameAndStatus(payload.getProjectid(), ACTIVE_STATUS, user.getRealCompany().toUpperCase());
+            accessPids = RestApiUtils.getProjectPidListForRealCompanyNameAndStatus(payload.getProjectid(),
+                    ACTIVE_STATUS, user.getRealCompany().toUpperCase());
         } else {
             accessPids = RestApiUtils.getProjectPidList(payload.getProjectid(), ACTIVE_STATUS);
         }
@@ -115,7 +116,7 @@ public class RuleService {
      */
 
     private Response createSuiteRunReport(RuleApi payload, Integer pageNo,
-                                          Integer sort, String sortedColumn, List<String> errors) throws ParseException {
+            Integer sort, String sortedColumn, List<String> errors) throws ParseException {
 
         Map<String, Object> result = new HashMap<>();
         List<Object> headers = new ArrayList<>();
@@ -142,7 +143,8 @@ public class RuleService {
             throw new CustomDataException(PAGE_NO_CANNOT_BE_NEGATIVE_OR_ZERO, null, Failure, HttpStatus.OK);
         }
 
-        List<SuiteExeDto> suiteReports = RestApiUtils.getSuiteExes(p_ids, envs, startTime, endTime, pageNo, sort, sortedColumn);
+        List<SuiteExeDto> suiteReports = RestApiUtils.getSuiteExes(p_ids, envs, startTime, endTime, pageNo, sort,
+                sortedColumn);
         if (suiteReports.isEmpty()) {
             log.error("Error occurred due to records not found");
             throw new CustomDataException(PAGE_NUMBER_IS_ABOVE_TOTAL_PAGES, null, Failure, HttpStatus.OK);
@@ -197,7 +199,8 @@ public class RuleService {
      * @param statusMap
      * @return
      */
-    private Map<String, Object> getTestExeStatusForSuiteExe(List<TestExeDto> testExeDtoList, SuiteExeDto suiteExeDto, Set<String> users, Map<String, Long> statusMap) {
+    private Map<String, Object> getTestExeStatusForSuiteExe(List<TestExeDto> testExeDtoList, SuiteExeDto suiteExeDto,
+            Set<String> users, Map<String, Long> statusMap) {
         Map<String, Object> temp = new HashMap<>();
         long totalCount = 0L;
         for (TestExeDto testExeDto : testExeDtoList) {
@@ -253,8 +256,13 @@ public class RuleService {
                 ReportUtils.createCustomObject(StringUtils.capitalize(suiteExeDto.getProject_name()), "text",
                         suiteExeDto.getProject_name(),
                         "left"));
+        temp.put("P ID",
+                ReportUtils.createCustomObject((suiteExeDto.getP_id()), "text",
+                        suiteExeDto.getP_id(),
+                        "left"));
         temp.put("Environment",
-                ReportUtils.createCustomObject(StringUtils.capitalize(suiteExeDto.getEnv()), "text", suiteExeDto.getEnv(),
+                ReportUtils.createCustomObject(StringUtils.capitalize(suiteExeDto.getEnv()), "text",
+                        suiteExeDto.getEnv(),
                         "left"));
         if (!users.isEmpty()) {
             temp.put("Executed By", ReportUtils.createCustomObject(users,
@@ -281,7 +289,8 @@ public class RuleService {
         }
     }
 
-    private Response createSuiteSummaryReport(RuleApi payload, Integer pageNo, List<String> errors) throws ParseException {
+    private Response createSuiteSummaryReport(RuleApi payload, Integer pageNo, List<String> errors)
+            throws ParseException {
 
         Map<String, Object> result = new HashMap<>();
         List<Object> headers = new ArrayList<>();
@@ -299,7 +308,6 @@ public class RuleService {
         List<String> envs = payload.getEnv();
         envs.replaceAll(String::toLowerCase);
         List<Long> p_ids = payload.getProjectid();
-
 
         if (pageNo != null && pageNo <= 0) {
             log.error("Error occurred due to records not found");
@@ -324,7 +332,8 @@ public class RuleService {
         return new Response(result, count + " Records found", Success);
     }
 
-    private Long getReportDetailsToCreateSuiteSummaryReport(List<String> reportNames, List<Long> p_ids, List<String> projects, long startTime, long endTime, List<String> envs, List<Map<String, Object>> data) {
+    private Long getReportDetailsToCreateSuiteSummaryReport(List<String> reportNames, List<Long> p_ids,
+            List<String> projects, long startTime, long endTime, List<String> envs, List<Map<String, Object>> data) {
         long count = 0;
         for (String reportName : reportNames) {
             Map<String, List<SuiteExeDto>> suiteMap = ReportUtils.getSuiteNames(reportName, p_ids, projects, startTime,
@@ -367,7 +376,8 @@ public class RuleService {
         return totalCount;
     }
 
-    private Map<String, Object> getReportDataForSuiteSummaryReport(List<SuiteExeDto> getAllSuites, String reportName, Long totalCount, Map<String, Long> statusMap) {
+    private Map<String, Object> getReportDataForSuiteSummaryReport(List<SuiteExeDto> getAllSuites, String reportName,
+            Long totalCount, Map<String, Long> statusMap) {
         String env = getAllSuites.get(0).getEnv();
         List<SuiteExeDto> sortedList = ReportUtils.getSortedListForSuiteExe(getAllSuites);
         double brokenIndex = ReportUtils.brokenIndexForSuiteExe(getAllSuites);
@@ -436,7 +446,8 @@ public class RuleService {
         return temp;
     }
 
-    private Response createSuiteDiagnoseReport(RuleApi payload, Integer pageNo, List<String> errors) throws ParseException {
+    private Response createSuiteDiagnoseReport(RuleApi payload, Integer pageNo, List<String> errors)
+            throws ParseException {
 
         Map<String, Object> result = new HashMap<>();
         List<Object> headers = new ArrayList<>();
@@ -479,7 +490,8 @@ public class RuleService {
         return new Response(result, count + " Records found", Success);
     }
 
-    private Long getReportDetailsToCreateSuiteDiagnoseReport(List<String> reportNames, List<Long> pIds, List<String> projects, long startTime, long endTime, List<String> envs, List<Map<String, Object>> data) {
+    private Long getReportDetailsToCreateSuiteDiagnoseReport(List<String> reportNames, List<Long> pIds,
+            List<String> projects, long startTime, long endTime, List<String> envs, List<Map<String, Object>> data) {
         long count = 0;
         for (String reportName : reportNames) {
             Map<String, List<SuiteExeDto>> suiteMap = ReportUtils.getSuiteNames(reportName, pIds, projects, startTime,
@@ -519,15 +531,19 @@ public class RuleService {
                     downTimeStr = ReportUtils.convertLongToTime(downTime);
                 }
 
-                data.add(getDataForSuiteExeToCreateSuiteDiagnoseReport(reportName, getAllSuites, stabilityIndex, failingSince, lastRunStatus, lastPass,
+                data.add(getDataForSuiteExeToCreateSuiteDiagnoseReport(reportName, getAllSuites, stabilityIndex,
+                        failingSince, lastRunStatus, lastPass,
                         culprit, downTimeStr, averageFixTimeStr, statusMap, totalCount));
             }
         }
         return count;
     }
 
-    private Map<String, Object> getDataForSuiteExeToCreateSuiteDiagnoseReport(String reportName, List<SuiteExeDto> getAllSuites, int stabilityIndex, String failingSince, String lastRunStatus, Long lastPass,
-                                                                              Map<String, Long> culprit, String downTimeStr, String averageFixTimeStr, Map<String, Long> statusMap, long totalCount) {
+    private Map<String, Object> getDataForSuiteExeToCreateSuiteDiagnoseReport(String reportName,
+            List<SuiteExeDto> getAllSuites, int stabilityIndex, String failingSince, String lastRunStatus,
+            Long lastPass,
+            Map<String, Long> culprit, String downTimeStr, String averageFixTimeStr, Map<String, Long> statusMap,
+            long totalCount) {
         Map<String, Object> temp = new HashMap<>();
         temp.put("Report Name",
                 ReportUtils.createCustomObject(StringUtils.capitalize(reportName), "text", reportName,
@@ -630,7 +646,7 @@ public class RuleService {
     }
 
     private Response createTestCaseRunReport(RuleApi payload, Integer pageNo, Integer sort,
-                                             String sortedColumn, List<String> errors) {
+            String sortedColumn, List<String> errors) {
         Map<String, Object> result = new HashMap<>();
         List<Object> headers = new ArrayList<>();
         Collections.addAll(headers, "Project Name", "TestCase Name", "Environment", "Status", "Action",
@@ -672,6 +688,10 @@ public class RuleService {
                             "center", actionReport));
             temp.put("TestCase Name",
                     ReportUtils.createCustomObject(testExe.get("name"), "text", testExe.get("name"), "left"));
+            temp.put("P ID",
+                    ReportUtils.createCustomObject(
+                            StringUtils.capitalize(String.valueOf(suiteExe.get("p_id"))), "text",
+                            suiteExe.get("p_id"), "left"));
             temp.put("Project Name",
                     ReportUtils.createCustomObject(
                             StringUtils.capitalize(String.valueOf(suiteExe.get("project_name"))), "text",
@@ -711,7 +731,7 @@ public class RuleService {
     }
 
     private Response createTestCaseSummaryReport(RuleApi payload, Integer pageNo, Integer sort,
-                                                 String sortedColumn, Object errors) {
+            String sortedColumn, Object errors) {
         Map<String, Object> result = new HashMap<>();
 
         List<Object> headers = new ArrayList<>();
@@ -739,7 +759,8 @@ public class RuleService {
                     suiteExeDto);
             StringBuilder key = new StringBuilder();
             key.append(testExeDtoSummery.getName()).append(":").append(testExeDtoSummery.getReport_name())
-                    .append(":").append(testExeDtoSummery.getEnv()).append(":").append(testExeDtoSummery.getProject_name());
+                    .append(":").append(testExeDtoSummery.getEnv()).append(":")
+                    .append(testExeDtoSummery.getProject_name());
             List<TestExeCommonDto> list = listMap.getOrDefault(key.toString(), null);
             if (list == null) {
                 List<TestExeCommonDto> testExeDtoSummeryList = new ArrayList<>();
@@ -832,7 +853,7 @@ public class RuleService {
     }
 
     private Response createTestCaseDiagnoseReport(RuleApi payload, Integer pageNo, Integer sort,
-                                                  String sortedColumn, Object errors) {
+            String sortedColumn, Object errors) {
 
         Map<String, Object> result = new HashMap<>();
         List<Object> headers = new ArrayList<>();
@@ -933,7 +954,8 @@ public class RuleService {
         return new Response(result, listMap.size() + " Records found", Success);
     }
 
-    public Response getRuleActionReportV3(String s_run_id, String tc_run_id, Integer pageNo, Integer sort, String sortedColumn) {
+    public Response getRuleActionReportV3(String s_run_id, String tc_run_id, Integer pageNo, Integer sort,
+            String sortedColumn) {
         if (tc_run_id == null) {
 
             if ((sort != null && sortedColumn == null) || (sort == null && sortedColumn != null)) {
@@ -958,7 +980,8 @@ public class RuleService {
                 throw new CustomDataException(SUITE_DETAILS_NOT_FOUND, null, Failure, HttpStatus.NOT_FOUND);
             }
 
-            List<VarianceClassificationDto> varianceClassificationList = RestApiUtils.getVarianceClassificationList(getSuite.getVarianceIds(), ACTIVE_STATUS);
+            List<VarianceClassificationDto> varianceClassificationList = RestApiUtils
+                    .getVarianceClassificationList(getSuite.getVarianceIds(), ACTIVE_STATUS);
             Map<Long, VarianceClassificationDto> varianceList = new HashMap<>();
             List<Long> varianceIds = new ArrayList<>();
             for (VarianceClassificationDto varianceClassification : varianceClassificationList) {
@@ -998,14 +1021,14 @@ public class RuleService {
                 timeReport.put("Duration", null);
                 result.put("Time Details", timeReport);
                 List<Map<String, Long>> testcaseLegend = new ArrayList<>();
-                Map<String,Object> data = new HashMap<>();
+                Map<String, Object> data = new HashMap<>();
                 Map<String, Long> initialTestcaseInfo = new HashMap<>();
                 initialTestcaseInfo.put("TOTAL", getSuite.getExpected_testcases());
                 data.put("value", ReportUtils.createDoughnutChart(initialTestcaseInfo));
                 testcaseLegend.add(initialTestcaseInfo);
                 data.put("legend", testcaseLegend);
 
-                List<TestExeDto> tempTest = RestApiUtils.getTestExes(s_run_id, pageNo, sort, sortedColumn, true);
+                List<TestExeDto> tempTest = RestApiUtils.fetchTestExes(s_run_id, sort, sortedColumn);
                 if (!tempTest.isEmpty()) {
                     reportUtils.populateResultWithTestExes(
                             tempTest,
@@ -1020,10 +1043,8 @@ public class RuleService {
                             currentPriority,
                             expectedStatus,
                             result,
-                            project
-                    );
-                }
-                else {
+                            project);
+                } else {
                     Map<String, Object> exe_data = new HashMap<>();
                     Map<String, Object> testcase_progress = new HashMap<>();
                     Map<String, Object> expected_status = new HashMap<>();
@@ -1035,7 +1056,7 @@ public class RuleService {
                             getSuite.getTestcase_details() != null ? getSuite.getTestcase_details().size() : 0);
 
                     // Initial Doughnut chart data
-                    exe_data.put("testcase_info",data);
+                    exe_data.put("testcase_info", data);
 
                     SuiteRun suiteRunData = RestApiUtils.getSuiteRun(getSuite.getS_run_id());
                     List<List<DependencyTree>> ans = new ArrayList<>();
@@ -1049,9 +1070,11 @@ public class RuleService {
                     exe_data.put("testcase_progress", testcase_progress);
                     exe_data.put("expected_status", expected_status);
                     exe_data.put("expected_completion",
-                            Math.round(ReportUtils.getTimeRemainingNew(getSuite,ans)));
-                    result.put("Infra Headers", ReportUtils.createInfraAndUserHeaders(tempTest, getSuite, "infraDetails"));
-                    result.put("User Details", ReportUtils.createInfraAndUserHeaders(tempTest, getSuite, "userDetails"));
+                            Math.round(ReportUtils.getTimeRemainingNew(getSuite, ans)));
+                    result.put("Infra Headers",
+                            ReportUtils.createInfraAndUserHeaders(tempTest, getSuite, "infraDetails"));
+                    result.put("User Details",
+                            ReportUtils.createInfraAndUserHeaders(tempTest, getSuite, "userDetails"));
                     result.put("Execution details", ReportUtils.createExecutionDetailsHeaders(tempTest));
                     testcase_progress.put("executed", testcaseDetailsData.size());
                     result.put("exe_data", exe_data);
@@ -1059,8 +1082,7 @@ public class RuleService {
                 }
 
                 return new Response(result, EXE_REPORT_SUCCESSFULLY_FETCHED, Success);
-            }
-            else {
+            } else {
                 return reportUtils.populateResultWithoutTestExes(
                         getSuite,
                         result,
@@ -1071,12 +1093,10 @@ public class RuleService {
                         varianceList,
                         varianceIds,
                         project,
-                        user1.getUsername()
-                );
+                        user1.getUsername());
             }
 
-        }
-        else {
+        } else {
             return reportUtils.getResultWithTcRunId(tc_run_id);
         }
     }
@@ -1098,7 +1118,8 @@ public class RuleService {
             throw new CustomDataException(PROJECT_NOT_EXISTS, null, Failure, HttpStatus.NOT_ACCEPTABLE);
         }
 
-        ProjectRoleDto projectRole = RestApiUtils.getProjectRoleEntity(project.getPid(), user.getUsername(), ACTIVE_STATUS);
+        ProjectRoleDto projectRole = RestApiUtils.getProjectRoleEntity(project.getPid(), user.getUsername(),
+                ACTIVE_STATUS);
 
         if (projectRole == null &&
                 !((user.getRole().equalsIgnoreCase(ADMIN.toString())
@@ -1122,7 +1143,8 @@ public class RuleService {
                     suiteExeDto.setSprint_name(sprint_name);
                 }
             } else {
-                throw new CustomDataException("build id or sprint name is missing, one of these is mandatory ", null, Failure, HttpStatus.BAD_REQUEST);
+                throw new CustomDataException("build id or sprint name is missing, one of these is mandatory ", null,
+                        Failure, HttpStatus.BAD_REQUEST);
             }
             RestApiUtils.updateSuiteExe(s_run_id, suiteExeDto);
             Map<String, Object> messageMap = Map.of(s_run_id, "Updated");
@@ -1149,7 +1171,8 @@ public class RuleService {
             throw new CustomDataException(PROJECT_NOT_EXISTS, null, Failure, HttpStatus.NOT_ACCEPTABLE);
         }
 
-        ProjectRoleDto projectRole = RestApiUtils.getProjectRoleEntity(project.getPid(), user.getUsername(), ACTIVE_STATUS);
+        ProjectRoleDto projectRole = RestApiUtils.getProjectRoleEntity(project.getPid(), user.getUsername(),
+                ACTIVE_STATUS);
 
         if (projectRole == null &&
                 !((user.getRole().equalsIgnoreCase(ADMIN.toString())
@@ -1170,7 +1193,8 @@ public class RuleService {
 
     }
 
-    public Response getSuiteTimeline(Map<String, Object> payload, HttpServletRequest request, String category, String search, Integer pageNo, Integer sort, String sortedColumn) throws ParseException {
+    public Response getSuiteTimeline(Map<String, Object> payload, HttpServletRequest request, String category,
+            String search, Integer pageNo, Integer sort, String sortedColumn) throws ParseException {
 
         UserDto user1 = ReportUtils.getUserDtoFromServetRequest();
 
@@ -1189,29 +1213,33 @@ public class RuleService {
         }
         if (!ReportUtils.validateRoleWithViewerAccess(user1, project)) {
             log.error("Error occurred due to records not found");
-            throw new CustomDataException(USER_NOT_ACCESS_TO_PROJECT, null, Info, HttpStatus.NOT_ACCEPTABLE, REQUEST_ACCESS);
+            throw new CustomDataException(USER_NOT_ACCESS_TO_PROJECT, null, Info, HttpStatus.NOT_ACCEPTABLE,
+                    REQUEST_ACCESS);
         }
 
         Map<String, Object> result = new HashMap<>();
         List<Object> headers = new ArrayList<>();
-        Collections.addAll(headers, "Start Time", "Status", "Action", "Testcases", "Run Type", "Run Mode", "Token User", "Base User");
+        Collections.addAll(headers, "Start Time", "Status", "Action", "Testcases", "Run Type", "Run Mode", "Token User",
+                "Base User");
         result.put("headers", headers);
         List<Map<String, Object>> data = new ArrayList<>();
         long starttime = new SimpleDateFormat("MM/dd/yyyy").parse(payload.get("start_time").toString()).getTime();
-        long endtime = new SimpleDateFormat("MM/dd/yyyy").parse((String) payload.get("end_time")).getTime() + (1000 * 60 * 60 * 24);
-
+        long endtime = new SimpleDateFormat("MM/dd/yyyy").parse((String) payload.get("end_time")).getTime()
+                + (1000 * 60 * 60 * 24);
 
         if (pageNo != null && pageNo <= 0) {
             log.error("Error occurred due to records not found");
             throw new CustomDataException(PAGE_NO_CANNOT_BE_NEGATIVE_OR_ZERO, null, Failure, HttpStatus.OK);
         }
 
-        List<SuiteExeDto> suiteReports = RestApiUtils.getSuiteExesForSuiteTimeline(getSuite.getP_id(), category, getSuite.getEnv(), getSuite.getReport_name(), starttime, endtime, pageNo, sort, sortedColumn);
+        List<SuiteExeDto> suiteReports = RestApiUtils.getSuiteExesForSuiteTimeline(getSuite.getP_id(), category,
+                getSuite.getEnv(), getSuite.getReport_name(), starttime, endtime, pageNo, sort, sortedColumn);
         if (suiteReports.isEmpty()) {
             result.put("data", data);
             return new Response(result, NO_RECORDS_FOUND, Success);
         }
-        List<String> sRunIds = RestApiUtils.getS_Run_IdsForSuiteTimeline(getSuite.getP_id(), category, getSuite.getEnv(), getSuite.getReport_name(), starttime, endtime, pageNo, sort, sortedColumn);
+        List<String> sRunIds = RestApiUtils.getS_Run_IdsForSuiteTimeline(getSuite.getP_id(), category,
+                getSuite.getEnv(), getSuite.getReport_name(), starttime, endtime, pageNo, sort, sortedColumn);
 
         List<TestExeDto> testcaseDetails = RestApiUtils.getTestExeListForS_run_ids(sRunIds);
         SuiteDto suiteData = RestApiUtils.getSuiteByReportNameAndStatus(getSuite.getReport_name(), ACTIVE_STATUS);
@@ -1222,11 +1250,14 @@ public class RuleService {
             HashMap<String, Object> temp = new HashMap<>();
             Map<String, Object> timeMap = new HashMap<>();
             timeMap.put("subType", "datetime");
-            temp.put("Start Time", ReportUtils.createCustomObject(suiteExeDto.getS_start_time(), "date", suiteExeDto.getS_start_time(), "left", timeMap));
-            temp.put("Status", ReportUtils.createCustomObject(suiteExeDto.getStatus(), "status", suiteExeDto.getStatus(), "left"));
+            temp.put("Start Time", ReportUtils.createCustomObject(suiteExeDto.getS_start_time(), "date",
+                    suiteExeDto.getS_start_time(), "left", timeMap));
+            temp.put("Status",
+                    ReportUtils.createCustomObject(suiteExeDto.getStatus(), "status", suiteExeDto.getStatus(), "left"));
             HashMap<String, Object> actionMap = new HashMap<>();
             actionMap.put("subType", "execution_report");
-            temp.put("Action", ReportUtils.createCustomObject(suiteExeDto.getS_run_id(), "action", suiteExeDto.getS_run_id(), "center", actionMap));
+            temp.put("Action", ReportUtils.createCustomObject(suiteExeDto.getS_run_id(), "action",
+                    suiteExeDto.getS_run_id(), "center", actionMap));
 
             Set<String> baseUserSet = new HashSet<>();
             Set<String> tokenUserSet = new HashSet<>();
@@ -1289,26 +1320,32 @@ public class RuleService {
                             break;
                     }
 
-                    if (testExeDto.getBase_user() != null) baseUserSet.add(testExeDto.getBase_user());
-                    if (testExeDto.getToken_user() != null) tokenUserSet.addAll(testExeDto.getToken_user());
+                    if (testExeDto.getBase_user() != null)
+                        baseUserSet.add(testExeDto.getBase_user());
+                    if (testExeDto.getToken_user() != null)
+                        tokenUserSet.addAll(testExeDto.getToken_user());
                     runTypeSet.add(testExeDto.getRun_type());
                     runModeSet.add(testExeDto.getRun_mode());
 
                 }
-                if ((search != null && !(search.equals("") || search.equalsIgnoreCase("null")) && !verifySearch(search, tokenUserSet))) {
+                if ((search != null && !(search.equals("") || search.equalsIgnoreCase("null"))
+                        && !verifySearch(search, tokenUserSet))) {
                     continue;
                 }
                 HashMap<String, Object> statusSubType = new HashMap<>();
                 statusSubType.put("subType", "timeline_tc");
                 statusMap.put("TOTAL", totalCount);
-                if (suiteExeDto.getStatus().equalsIgnoreCase("EXE") && totalCount != suiteExeDto.getExpected_testcases()) {
+                if (suiteExeDto.getStatus().equalsIgnoreCase("EXE")
+                        && totalCount != suiteExeDto.getExpected_testcases()) {
                     statusMap.put("EXE", suiteExeDto.getExpected_testcases() - totalCount);
                 }
-                if (suiteExeDto.getStatus().equalsIgnoreCase("ERR") && totalCount != suiteExeDto.getExpected_testcases()) {
-                    statusMap.put("ERR", Long.parseLong(statusMap.get(ERR.toString()).toString()) + Math.abs(suiteExeDto.getExpected_testcases() - totalCount));
+                if (suiteExeDto.getStatus().equalsIgnoreCase("ERR")
+                        && totalCount != suiteExeDto.getExpected_testcases()) {
+                    statusMap.put("ERR", Long.parseLong(statusMap.get(ERR.toString()).toString())
+                            + Math.abs(suiteExeDto.getExpected_testcases() - totalCount));
                 }
-                temp.put("Testcases", ReportUtils.createCustomObject(statusMap, "crud", statusMap, "left", statusSubType));
-
+                temp.put("Testcases",
+                        ReportUtils.createCustomObject(statusMap, "crud", statusMap, "left", statusSubType));
 
             }
             temp.put("Token User", ReportUtils.createCustomObject(tokenUserSet, "text", tokenUserSet, "left"));
@@ -1349,7 +1386,8 @@ public class RuleService {
         }
         if (!ReportUtils.validateRoleWithViewerAccess(user, project)) {
             log.error("Error occurred due to records not found");
-            throw new CustomDataException(USER_NOT_ACCESS_TO_PROJECT, null, Info, HttpStatus.NOT_ACCEPTABLE, REQUEST_ACCESS);
+            throw new CustomDataException(USER_NOT_ACCESS_TO_PROJECT, null, Info, HttpStatus.NOT_ACCEPTABLE,
+                    REQUEST_ACCESS);
         }
 
         String azureUrl = "https://dev.azure.com/GEM-QualityEngineering/_workitems/edit/";

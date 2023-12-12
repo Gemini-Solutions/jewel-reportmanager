@@ -12,7 +12,6 @@ import com.mongodb.BasicDBObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
-import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -217,7 +216,8 @@ public class ReportUtils {
                     String subStepStatus = statusTestLevel;
                     ClassificationDetails classificationDetails = null;
                     if (stepsListHeaders.contains("VARIANCEID")) {
-                        Long varianceId = (Long) stepMap.get("VARIANCEID");
+                        Integer intVarianceValue  = (Integer)stepMap.get("VARIANCEID");
+                        Long varianceId = intVarianceValue != null ? intVarianceValue.longValue(): null;
                         varianceIsThere = true;
                         if(varianceList.get(varianceId) != null) {
                             clickable = true;
@@ -874,18 +874,23 @@ public class ReportUtils {
                 }
             }
             ObjectMapper oMapper = new ObjectMapper();
-            ModelMapper modelMapper = new ModelMapper();
-            TestExeDto2 customDto = modelMapper.map(testExe, TestExeDto2.class);
-            LinkedHashMap<String, Object> map = oMapper.convertValue(customDto, LinkedHashMap.class);
+            LinkedHashMap<String, Object> map = oMapper.convertValue(testExe, LinkedHashMap.class);
             if (testExe.getUser_defined_data() != null) {
                 map.putAll(testExe.getUser_defined_data());
             }
-            depopulateMap(map);
-            map.remove("category");
-            map.remove("machine");
-            map.remove("base_user");
-            map.remove("invoke_user");
-            map.remove("token_user");
+            map.remove("user_defined_data");
+            map.remove("steps");
+            map.remove("meta_data");
+            map.remove("ignore");
+            map.remove("log_file");
+            map.remove("result_file");
+            map.remove("s_run_id");
+            map.remove("tc_run_id");
+            map.remove("job_name");
+            map.remove("classificationDetails");
+            map.remove("varianceId");
+            map.remove("stepVarianceIds");
+            map.remove("testcase_id");
             map.remove("job_name");
             testcaseDetailsHeaders.remove("classificationDetails");
             testcaseDetailsHeaders.remove("stepVarianceIds");
@@ -1898,8 +1903,7 @@ public class ReportUtils {
 
     public static String checkStatusOfTestCaseByStepsIfVarianceIsThere(String tc_run_id,
                                                                        Map<Long, VarianceClassificationDto> data) {
-        Query query = new Query(Criteria.where("tc_run_id").is(tc_run_id));
-        StepsDto steps = mongoOperations.findOne(query, StepsDto.class);
+        StepsDto steps = RestApiUtils.getSteps(tc_run_id);
         if (steps.getSteps().size() == 0) {
             return "PASS";
         }
@@ -1908,7 +1912,8 @@ public class ReportUtils {
             String status = null;
             Map<String, Object> finalstep = (Map<String, Object>) step;
             if (finalstep.getOrDefault("VARIANCEID", null) != null) {
-                Long varianceId = (Long) finalstep.getOrDefault("VARIANCEID", null);
+                Integer intVarianceValue  = (Integer)finalstep.getOrDefault("VARIANCEID", null);
+                Long varianceId = intVarianceValue != null ? intVarianceValue.longValue(): null;
                 if (data.getOrDefault(varianceId, null) != null) {
                     status = "PASS";
                 } else {
@@ -1980,7 +1985,7 @@ public class ReportUtils {
     }
 
     public static Double getTimeRemainingNew(SuiteExeDto suite, List<List<DependencyTree>> ans) {
-
+        // TODO: 12/12/2023 this method is not working as expected. replace mongoOperations with rest calls on insertion manager. 
         Double remaining_time = 0.0;
 
         List<Criteria> criteria = new ArrayList<Criteria>();
