@@ -57,9 +57,6 @@ public class RestApiUtils {
      * @return List<Long>
      */
     public static List<Long> getProjectRolePidList(List<Long> pid, String status, String username) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         String pidList =  pid.stream()
                 .map(Object::toString)
@@ -67,20 +64,27 @@ public class RestApiUtils {
         uriVariables.put("pid", pidList);
         uriVariables.put("status", status);
         uriVariables.put("username", username);
+        String url =
+                projectManagerUrl + "/v2/project/role/pid/status/username?pid={pid}&status={status}&username={username}";
         try {
-            ResponseEntity response = restTemplate.exchange(projectManagerUrl + "/v2/project/role/pid/status/username?pid={pid}&status={status}&username={username}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<Long>>() {
-            }.getType();
+            Response response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
+                    Response.class,
+                    uriVariables
+            ).getBody();
 
-            return gson.fromJson(gson.toJson(data), type);
+            if (response != null && response.getOperation().equals(OperationType.Success)) {
+                List<?> pidsList = (List<?>) response.getData();
+                return pidsList.stream().map(pId -> Long.valueOf((Integer) pId)).collect(Collectors.toList());
+            } else {
+                log.error("Something went wrong while fetching project role pid(s) for pid: {}", pid);
+                return List.of();
+            }
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Project role pid(s) list is empty for pid: {}", pid);
-            return Collections.EMPTY_LIST;
+            log.error("Project role pid(s) list is empty for pid: {}", pid);
+            return List.of();
         }
     }
 
@@ -157,9 +161,6 @@ public class RestApiUtils {
      * @return List<Long>
      */
     public static List<Long> getProjectPidListForRealCompanyNameAndStatus(List<Long> pid, String status, String realCompanyName) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         String pidList =  pid.stream()
                 .map(Object::toString)
@@ -167,20 +168,28 @@ public class RestApiUtils {
         uriVariables.put("pid", pidList);
         uriVariables.put("status", status);
         uriVariables.put("realCompanyName", realCompanyName);
-        try {
-            ResponseEntity response = restTemplate.exchange(projectManagerUrl + "/v1/project/pid/status/realCompanyName?pid={pid}&status={status}&realCompanyName={realCompanyName}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<Long>>() {
-            }.getType();
 
-            return gson.fromJson(gson.toJson(data), type);
+        String url = projectManagerUrl +
+                "/v1/project/pid/status/realCompanyName?pid={pid}&status={status}&realCompanyName={realCompanyName}";
+        try {
+            Response response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
+                    Response.class,
+                    uriVariables
+            ).getBody();
+
+            if (response != null && response.getOperation().equals(OperationType.Success)) {
+                List<?> pidsList = (List<?>) response.getData();
+                return pidsList.stream().map(pId -> Long.valueOf((Integer) pId)).collect(Collectors.toList());
+            } else {
+                log.error("Something went wrong while fetching project role pid(s) for pid: {}", pid);
+                return List.of();
+            }
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Project pid(s) list is empty for pid: {}", pid);
-            return Collections.EMPTY_LIST;
+            log.error("Project pid(s) list is empty for pid: {}", pid);
+            return List.of();
         }
     }
 
@@ -192,29 +201,33 @@ public class RestApiUtils {
      * @return List<Long>
      */
     public static List<Long> getProjectPidList(List<Long> pid, String status) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         String pidList =  pid.stream()
                 .map(Object::toString)
                 .collect(Collectors.joining(","));
         uriVariables.put("pid", pidList);
         uriVariables.put("status", status);
-        try {
-            ResponseEntity response = restTemplate.exchange(projectManagerUrl + "/v1/project/pids?pid={pid}&status={status}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<Long>>() {
-            }.getType();
 
-            return gson.fromJson(gson.toJson(data), type);
+        String url = projectManagerUrl + "/v1/project/pids?pid={pid}&status={status}";
+        try {
+            Response response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
+                    Response.class,
+                    uriVariables
+            ).getBody();
+
+            if (response != null && response.getOperation().equals(OperationType.Success)) {
+                List<?> pidsList = (List<?>) response.getData();
+                return pidsList.stream().map(pId -> Long.valueOf((Integer) pId)).collect(Collectors.toList());
+            } else {
+                log.error("Something went wrong while fetching project role pid(s) for pid: {}", pid);
+                return List.of();
+            }
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Project pid(s) list is empty for pid: {}", pid);
-            return Collections.EMPTY_LIST;
+            log.error("Project pid(s) list is empty for pid: {}", pid);
+            return List.of();
         }
     }
 
@@ -225,28 +238,32 @@ public class RestApiUtils {
      * @return List<String>
      */
     public static List<String> getProjectNames(List<Long> pid) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         String pidList =  pid.stream()
                 .map(Object::toString)
                 .collect(Collectors.joining(","));
         uriVariables.put("pid", pidList);
-        try {
-            ResponseEntity response = restTemplate.exchange(projectManagerUrl + "/v1/project/pid?pid={pid}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<String>>() {
-            }.getType();
 
-            return gson.fromJson(gson.toJson(data), type);
+        String url = projectManagerUrl + "/v1/project/pid?pid={pid}";
+        try {
+            Response response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
+                    Response.class,
+                    uriVariables
+            ).getBody();
+
+            if(response != null && response.getOperation().equals(OperationType.Success)) {
+                List<?> projectsList = (List<?>) response.getData();
+                return projectsList.stream().map(Object::toString).collect(Collectors.toList());
+            } else {
+                log.error("Something went wrong while fetching s_run_ids for pids: {}", pid);
+                return List.of();
+            }
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Project names list is empty for pid: {}", pid);
-            return Collections.EMPTY_LIST;
+            log.error("Project names list is empty for pid: {}", pid);
+            return List.of();
         }
     }
 
@@ -262,34 +279,41 @@ public class RestApiUtils {
      * @return List<String>
      */
     public static List<String> getReportNames(List<Long> p_id, List<String> env, Long s_start_time, Long s_end_time, Integer pageNo) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         String pidList =  p_id.stream()
                 .map(Object::toString)
                 .collect(Collectors.joining(","));
         uriVariables.put("p_id", pidList);
-        String envList = env.stream()
-                .collect(Collectors.joining(","));
+        String envList = String.join(",", env);
         uriVariables.put("env", envList);
         uriVariables.put("s_start_time", s_start_time);
         uriVariables.put("s_end_time", s_end_time);
         uriVariables.put("pageNo", pageNo);
-        try {
-            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/suiteExe/report-names?p_id={p_id}&env={env}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<String>>() {
-            }.getType();
 
-            return gson.fromJson(gson.toJson(data), type);
+        String url = insertionManagerUrl + "/v1/suiteExe/report-names?p_id={p_id}&env={env}" +
+                "&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}";
+        try {
+            Response response = restTemplate.exchange(
+                    url, HttpMethod.GET,
+                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
+                    Response.class,
+                    uriVariables
+            ).getBody();
+
+            List<String> reportNames;
+            if(response != null && response.getOperation().equals(OperationType.Success)) {
+                List<?> reportNamesList = (List<?>) response.getData();
+                reportNames = reportNamesList.stream().map(Object::toString).collect(Collectors.toList());
+                return reportNames;
+            } else {
+                log.error("Something went wrong while fetching report names for pid: {}, " +
+                                "env: {}, start time: {}, end time: {} pageNo: {}",
+                        p_id, env, s_start_time, s_end_time, pageNo);
+                return List.of();
+            }
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Report names list is empty for pid: {}, env: {}, start time: {}, end time: {} and pageNo: {}", p_id, env, s_start_time, s_end_time, pageNo);
-            return Collections.EMPTY_LIST;
+            log.error("Report names list is empty for pid: {}, env: {}, start time: {}, end time: {} and pageNo: {}", p_id, env, s_start_time, s_end_time, pageNo);
+            return List.of();
         }
     }
 
@@ -306,36 +330,43 @@ public class RestApiUtils {
      * @return List<SuiteExeDto>
      */
     public static List<SuiteExeDto> getSuiteExes(List<Long> p_id, List<String> env, Long s_start_time, Long s_end_time, Integer pageNo, Integer sort, String sortedColumn) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         String pidList =  p_id.stream()
                 .map(Object::toString)
                 .collect(Collectors.joining(","));
         uriVariables.put("p_id", pidList);
-        String envList = env.stream()
-                .collect(Collectors.joining(","));
+        String envList = String.join(",", env);
         uriVariables.put("env", envList);
         uriVariables.put("s_start_time", s_start_time);
         uriVariables.put("s_end_time", s_end_time);
         uriVariables.put("pageNo", pageNo);
         uriVariables.put("sort", sort);
         uriVariables.put("sortedColumn", sortedColumn);
-        try {
-            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/suiteExe?p_id={p_id}&env={env}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<SuiteExeDto>>() {
-            }.getType();
 
-            return gson.fromJson(gson.toJson(data), type);
+        String url = insertionManagerUrl +
+                "/v1/suiteExe?p_id={p_id}&env={env}&s_start_time={s_start_time}&s_end_time={s_end_time}" +
+                "&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}";
+        try {
+            Response response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
+                    Response.class,
+                    uriVariables).getBody();
+            List<SuiteExeDto> suiteExeDtos = new ArrayList<>();
+            if(response != null && response.getOperation().equals(OperationType.Success)) {
+                for (Object suiteExe : ((List<?>) response.getData())) {
+                    suiteExeDtos.add(mapper.convertValue(suiteExe, new TypeReference<>() {}));
+                }
+                return suiteExeDtos;
+            } else {
+                log.error("Something went wrong while fetching suite exes for pid: {}, env: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}"
+                        , p_id, env, s_start_time, s_end_time, pageNo, sort, sortedColumn);
+                return List.of();
+            }
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Suite exe list is empty for pid: {}, env: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, env, s_start_time, s_end_time, pageNo, sort, sortedColumn);
-            return Collections.EMPTY_LIST;
+            log.error("Suite exe list is empty for pid: {}, env: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, env, s_start_time, s_end_time, pageNo, sort, sortedColumn);
+            return List.of();
         }
     }
 
@@ -352,36 +383,42 @@ public class RestApiUtils {
      * @return List<String>
      */
     public static List<String> getS_Run_Ids(List<Long> p_id, List<String> env, Long s_start_time, Long s_end_time, Integer pageNo, Integer sort, String sortedColumn) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
-        String pidList =  p_id.stream()
-                .map(Object::toString)
-                .collect(Collectors.joining(","));
+        String pidList = p_id.stream().map(Object::toString).collect(Collectors.joining(","));
         uriVariables.put("p_id", pidList);
-        String envList = env.stream()
-                .collect(Collectors.joining(","));
+        String envList = String.join(",", env);
         uriVariables.put("env", envList);
         uriVariables.put("s_start_time", s_start_time);
         uriVariables.put("s_end_time", s_end_time);
         uriVariables.put("pageNo", pageNo);
         uriVariables.put("sort", sort);
         uriVariables.put("sortedColumn", sortedColumn);
-        try {
-            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/suiteExe/s_run_ids?p_id={p_id}&env={env}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<String>>() {
-            }.getType();
 
-            return gson.fromJson(gson.toJson(data), type);
+        String url = insertionManagerUrl + "/v1/suiteExe/s_run_ids?p_id={p_id}&env={env}&s_start_time={s_start_time}" +
+                "&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}";
+        try {
+            Response response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
+                    Response.class,
+                    uriVariables
+            ).getBody();
+
+            List<String> sRunIds;
+            if(response != null && response.getOperation().equals(OperationType.Success)) {
+                List<?> sRunIdList = (List<?>) response.getData();
+                sRunIds = sRunIdList.stream().map(Object::toString).collect(Collectors.toList());
+                return sRunIds;
+            } else {
+                log.error("Something went wrong while fetching s_run_ids for pid: {}, " +
+                        "env: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}",
+                        p_id, env, s_start_time, s_end_time, pageNo, sort, sortedColumn);
+                return List.of();
+            }
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("s_run_ids list is empty for pid: {}, env: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, env, s_start_time, s_end_time, pageNo, sort, sortedColumn);
-            return Collections.EMPTY_LIST;
+            log.error("s_run_ids list is empty for pid: {}, env: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, env, s_start_time, s_end_time, pageNo, sort, sortedColumn);
+            return List.of();
         }
     }
 
@@ -487,29 +524,25 @@ public class RestApiUtils {
      * @return Long - count
      */
     public static Long getSuiteExeCount(List<Long> p_id, List<String> env, Long s_start_time, Long s_end_time) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         String pidList =  p_id.stream()
                 .map(Object::toString)
                 .collect(Collectors.joining(","));
         uriVariables.put("p_id", pidList);
-        String envList = env.stream()
-                .collect(Collectors.joining(","));
+        String envList = String.join(",", env);
         uriVariables.put("env", envList);
         uriVariables.put("s_start_time", s_start_time);
         uriVariables.put("s_end_time", s_end_time);
-        ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/suiteExe/count?p_id={p_id}&env={env}&s_start_time={s_start_time}&s_end_time={s_end_time}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-        Gson gson = new Gson();
-        String json = gson.toJson(response.getBody());
-        Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-        }.getType());
-        Object data = convertedMap.get("data");
-        Type type = new TypeToken<Long>() {
-        }.getType();
 
-        return gson.fromJson(gson.toJson(data), type);
+        String url = insertionManagerUrl +
+                "/v1/suiteExe/count?p_id={p_id}&env={env}&s_start_time={s_start_time}&s_end_time={s_end_time}";
+        Response response = restTemplate.exchange(
+                url, HttpMethod.GET, new HttpEntity<>(null, ReportUtils.getAuthHeader()), Response.class, uriVariables).getBody();
+        long count = 0;
+        if(response != null && response.getOperation().equals(OperationType.Success)) {
+            count = Long.valueOf((Integer)response.getData());
+        }
+        return count;
     }
 
     /**
@@ -661,17 +694,20 @@ public class RestApiUtils {
      * @return List<TestExeDto>
      */
     public static List<TestExeDto> getTestExeList(String s_run_id) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         uriVariables.put("s_run_id", s_run_id);
+
+        String url = insertionManagerUrl + "/v2/testExe/list?s_run_id={s_run_id}";
         try {
-            return restTemplate.exchange(insertionManagerUrl + "/v2/testExe/list?s_run_id={s_run_id}", HttpMethod.GET, httpEntity, new ParameterizedTypeReference<List<TestExeDto>>() {
-            }, uriVariables).getBody();
+            return restTemplate.exchange(
+                    url, HttpMethod.GET,
+                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
+                    new ParameterizedTypeReference<List<TestExeDto>>() {},
+                    uriVariables
+            ).getBody();
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Suite run is empty for s_run_id: {}", s_run_id);
-            return Collections.EMPTY_LIST;
+            log.error("Suite run is empty for s_run_id: {}", s_run_id);
+            return List.of();
         }
     }
 
@@ -682,26 +718,29 @@ public class RestApiUtils {
      * @return List<TestExeDto>
      */
     public static List<TestExeDto> getTestExeListForS_run_ids(List<String> s_run_ids) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         String str_s_run_ids = s_run_ids.stream().map(Object::toString).collect(Collectors.joining(","));
         uriVariables.put("s_run_ids", str_s_run_ids);
-        try {
-            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/testExe?s_run_ids={s_run_ids}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<TestExeDto>>() {
-            }.getType();
 
-            return gson.fromJson(gson.toJson(data), type);
+        String url = insertionManagerUrl + "/v1/testExe?s_run_ids={s_run_ids}";
+        try {
+            Response response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
+                    Response.class,
+                    uriVariables
+            ).getBody();
+            if(response != null && response.getOperation().equals(OperationType.Success)) {
+                List<?> testExes = (List<?>) response.getData();
+                return testExes.stream().map(testExe -> mapper.convertValue(testExe, new TypeReference<TestExeDto>() {})).collect(Collectors.toList());
+            } else {
+                log.error("Something went wrong while fetching Suite exe list for s_run_ids: {}", s_run_ids);
+                return List.of();
+            }
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Suite exe list is empty for s_run_ids: {}", s_run_ids);
-            return Collections.EMPTY_LIST;
+            log.error("Suite exe list is empty for s_run_ids: {}", s_run_ids);
+            return List.of();
         }
     }
 
@@ -832,37 +871,41 @@ public class RestApiUtils {
      * @return List<SuiteExeDto>
      */
     public static List<SuiteExeDto> getSuiteExesForReportName(String reportName, List<Long> pid, List<String> projects, long startTime, long endTime, List<String> envs) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         uriVariables.put("report_name", reportName);
         String pidList =  pid.stream()
                 .map(Object::toString)
                 .collect(Collectors.joining(","));
         uriVariables.put("p_id", pidList);
-        String projectsList = projects.stream()
-                .collect(Collectors.joining(","));
+        String projectsList = String.join(",", projects);
         uriVariables.put("projects", projectsList);
         uriVariables.put("s_start_time", startTime);
         uriVariables.put("s_end_time", endTime);
-        String envList = envs.stream()
-                .collect(Collectors.joining(","));
+        String envList = String.join(",", envs);
         uriVariables.put("env", envList);
-        try {
-            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/suiteExe/report_name?report_name={report_name}&p_id={p_id}&projects={projects}&s_start_time={s_start_time}&s_end_time={s_end_time}&env={env}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<SuiteExeDto>>() {
-            }.getType();
 
-            return gson.fromJson(gson.toJson(data), type);
+        String url = insertionManagerUrl + "/v1/suiteExe/report_name?report_name={report_name}" +
+                "&p_id={p_id}&projects={projects}&s_start_time={s_start_time}&s_end_time={s_end_time}&env={env}";
+        try {
+            Response response = restTemplate.exchange(
+                    url, HttpMethod.GET,
+                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
+                    Response.class,
+                    uriVariables
+            ).getBody();
+
+            if (response != null && response.getOperation().equals(OperationType.Success)) {
+                List<?> suiteExes = (List<?>) response.getData();
+                return suiteExes.stream().map(suiteExe -> mapper.convertValue(suiteExe, new TypeReference<SuiteExeDto>() {})).collect(Collectors.toList());
+            } else {
+                log.error("Something went wrong while fetching SuiteExes for reportName {}, " +
+                        "pids: {}, projects: {}, startTime: {}, endTime: {}, envs: {}",
+                        reportName, pid, projects, startTime, endTime, envs);
+                return List.of();
+            }
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Suite exe list is empty for reportName: {}, pid: {}, projects: {}, start time: {}, end time: {} and env: {}", reportName, pid, projects, startTime, endTime, envs);
-            return Collections.EMPTY_LIST;
+            log.error("Suite exe list is empty for reportName: {}, pid: {}, projects: {}, start time: {}, end time: {} and env: {}", reportName, pid, projects, startTime, endTime, envs);
+            return List.of();
         }
     }
 
@@ -912,15 +955,14 @@ public class RestApiUtils {
      */
     public static Map<String, Object> getAllTestExesForTcRunId(RuleApi payload, Integer pageNo, Integer sort,
                                                                String sortedColumn) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(payload, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         uriVariables.put("pageNo", pageNo);
         uriVariables.put("sort", sort);
         uriVariables.put("sortedColumn", sortedColumn);
+
+        String url = insertionManagerUrl + "/v1/testExe/data?pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}";
         try {
-            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/testExe/data?pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}", HttpMethod.POST, httpEntity, Object.class, uriVariables);
+            ResponseEntity response = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(payload, ReportUtils.getAuthHeader()), Object.class, uriVariables);
             Gson gson = new Gson();
             String json = gson.toJson(response.getBody());
             Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {

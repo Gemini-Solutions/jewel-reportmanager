@@ -1,5 +1,6 @@
 package com.jewel.reportmanager.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.jewel.reportmanager.dto.*;
@@ -12,7 +13,6 @@ import com.mongodb.BasicDBObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
-import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +24,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -47,6 +48,7 @@ public class ReportUtils {
     private static String projectManagerUrl;
     private static MongoOperations mongoOperations;
     private static RestTemplate restTemplate;
+    private static ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
     private ColumnMappingService columnMappingService;
@@ -1080,28 +1082,28 @@ public class ReportUtils {
      * @return user
      */
     public static UserDto getUsernameAndIsDeleted(String username, Boolean deleted) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         uriVariables.put("username", username);
         uriVariables.put("deleted", deleted);
-        try {
-            ResponseEntity response = restTemplate.exchange(userManagerUrl + "/userManagement/v1/username/deleted?username={username}&deleted={deleted}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            gson = new Gson();
-            Type type = new TypeToken<UserDto>() {
-            }.getType();
 
-            return gson.fromJson(gson.toJson(data), type);
+        String url = userManagerUrl + "/userManagement/v1/username/deleted?username={username}&deleted={deleted}";
+        try {
+            Response response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(null, getAuthHeader()),
+                    Response.class,
+                    uriVariables
+            ).getBody();
+
+            if(response != null && response.getOperation().equals(Success)) {
+                return mapper.convertValue(response.getData(), new TypeReference<>() {});
+            }
         } catch (RestClientException ex) {
             log.info("User details not found for username: {}, ", username);
             return null;
         }
+        return null;
     }
 
     /**
@@ -2881,6 +2883,12 @@ public class ReportUtils {
         } else {
             return null;
         }
+    }
+
+    public static MultiValueMap<String, String> getAuthHeader() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
+        return headers;
     }
 
 }
