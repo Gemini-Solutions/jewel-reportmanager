@@ -353,15 +353,13 @@ public class RestApiUtils {
                     new HttpEntity<>(null, ReportUtils.getAuthHeader()),
                     Response.class,
                     uriVariables).getBody();
-            List<SuiteExeDto> suiteExeDtos = new ArrayList<>();
             if(response != null && response.getOperation().equals(OperationType.Success)) {
-                for (Object suiteExe : ((List<?>) response.getData())) {
-                    suiteExeDtos.add(mapper.convertValue(suiteExe, new TypeReference<>() {}));
-                }
-                return suiteExeDtos;
+                List<?> suiteExes = (List<?>) response.getData();
+                return suiteExes.stream().map(suiteExe -> mapper.convertValue(suiteExe, new TypeReference<SuiteExeDto>() {})).collect(Collectors.toList());
             } else {
-                log.error("Something went wrong while fetching suite exes for pid: {}, env: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}"
-                        , p_id, env, s_start_time, s_end_time, pageNo, sort, sortedColumn);
+                log.error("Something went wrong while fetching suite exes for pid: {}, env: {}, " +
+                                "start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}",
+                        p_id, env, s_start_time, s_end_time, pageNo, sort, sortedColumn);
                 return List.of();
             }
         } catch (HttpClientErrorException.NotFound ex) {
@@ -405,11 +403,9 @@ public class RestApiUtils {
                     uriVariables
             ).getBody();
 
-            List<String> sRunIds;
             if(response != null && response.getOperation().equals(OperationType.Success)) {
                 List<?> sRunIdList = (List<?>) response.getData();
-                sRunIds = sRunIdList.stream().map(Object::toString).collect(Collectors.toList());
-                return sRunIds;
+                return sRunIdList.stream().map(Object::toString).collect(Collectors.toList());
             } else {
                 log.error("Something went wrong while fetching s_run_ids for pid: {}, " +
                         "env: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}",
