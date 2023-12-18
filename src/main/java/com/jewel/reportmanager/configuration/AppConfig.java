@@ -44,6 +44,7 @@ public class AppConfig {
         http.cors().and().csrf().disable()
                 .authorizeRequests()
                 .antMatchers(PUBLIC_URLs).permitAll()
+                .antMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()
                 .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 

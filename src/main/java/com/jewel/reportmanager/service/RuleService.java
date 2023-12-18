@@ -51,11 +51,11 @@ public class RuleService {
             Integer sort, String sortedColumn) throws ParseException {
 
         if ((sort != null && sortedColumn == null) || (sort == null && sortedColumn != null)) {
-            log.error("Error occurred due to records not found");
+            log.error("Both parameters are required sort and sortedColumn !!");
             throw new CustomDataException(BOTH_PARAMETERS_REQUIRED, null, Failure, HttpStatus.OK);
         }
         if (sort != null && sort != -1 && sort != 0 && sort != 1) {
-            log.error("Error occurred due to records not found");
+            log.error("Invalid sort value, please assign 1 for asc, 0 for normal and -1 for desc !!");
             throw new CustomDataException(INVALID_SORT_VALUE, null, Failure, HttpStatus.OK);
         }
 
@@ -1070,7 +1070,7 @@ public class RuleService {
                     exe_data.put("testcase_progress", testcase_progress);
                     exe_data.put("expected_status", expected_status);
                     exe_data.put("expected_completion",
-                            Math.round(ReportUtils.getTimeRemainingNew(getSuite, ans)));
+                            Math.round(RestApiUtils.getTimeRemainingNew(getSuite, ans)));
                     result.put("Infra Headers",
                             ReportUtils.createInfraAndUserHeaders(tempTest, getSuite, "infraDetails"));
                     result.put("User Details",
