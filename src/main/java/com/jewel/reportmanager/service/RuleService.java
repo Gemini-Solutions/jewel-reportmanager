@@ -1070,7 +1070,7 @@ public class RuleService {
                     exe_data.put("testcase_progress", testcase_progress);
                     exe_data.put("expected_status", expected_status);
                     exe_data.put("expected_completion",
-                            Math.round(ReportUtils.getTimeRemainingNew(getSuite, ans)));
+                            Math.round(RestApiUtils.getTimeRemainingNew(getSuite, ans)));
                     result.put("Infra Headers",
                             ReportUtils.createInfraAndUserHeaders(tempTest, getSuite, "infraDetails"));
                     result.put("User Details",
