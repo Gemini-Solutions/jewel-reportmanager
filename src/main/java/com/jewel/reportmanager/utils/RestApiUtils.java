@@ -12,10 +12,7 @@ import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -1014,6 +1011,33 @@ public class RestApiUtils {
             log.info("Error while fetching status wise count for s_run_id: {} and status: {}", s_run_id, status);
             return null;
         }
+    }
+
+    public static Double getTimeRemainingNew(SuiteExeDto suite, List<List<DependencyTree>> dependencies) {
+        try{
+        String url = insertionManagerUrl + "/v1/getExpectedSuiteExecutionTime";
+
+        SuiteDependencyDto dto = new SuiteDependencyDto();
+        dto.setDependency(dependencies);
+        dto.setSuiteExeDto(suite);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
+        HttpEntity<?> httpEntity = new HttpEntity<>(dto, headers);
+            ResponseEntity<Double> response = restTemplate.exchange(
+                        url,
+                        HttpMethod.POST,
+                        httpEntity,
+                        Double.class);
+            if(response.getStatusCode() == HttpStatus.OK){
+                return response.getBody();
+            }
+        } catch (RestClientException ex) {
+            log.error("Internal Service Error: {}, while calculating remaining time for suite with id: {}",
+                    ex.getMessage(), suite.getS_run_id() );
+        }
+        return 60.0;
     }
 
 }
