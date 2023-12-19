@@ -1099,9 +1099,13 @@ public class ReportUtils {
             if(response != null && response.getOperation().equals(Success)) {
                 return mapper.convertValue(response.getData(), new TypeReference<>() {});
             }
-        } catch (RestClientException ex) {
+        } catch (HttpClientErrorException.NotFound ex) {
             log.info("User details not found for username: {}, ", username);
             return null;
+        } catch (RestClientException ex) {
+            log.error(ex.getMessage());
+            throw new CustomDataException("Something went wrong. Please try again later !!",null,Failure, HttpStatus.OK);
+
         }
         return null;
     }
