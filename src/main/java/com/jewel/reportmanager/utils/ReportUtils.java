@@ -1,5 +1,6 @@
 package com.jewel.reportmanager.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.jewel.reportmanager.dto.*;
@@ -12,7 +13,6 @@ import com.mongodb.BasicDBObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
-import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +24,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -47,6 +48,7 @@ public class ReportUtils {
     private static String projectManagerUrl;
     private static MongoOperations mongoOperations;
     private static RestTemplate restTemplate;
+    private static ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
     private ColumnMappingService columnMappingService;
@@ -984,7 +986,7 @@ public class ReportUtils {
         exeData.put("expected_status", expectedStatusMap);
 
         exeData.put("expected_completion",
-                Math.round(ReportUtils.getTimeRemainingNew(getSuite, ans)));
+                Math.round(RestApiUtils.getTimeRemainingNew(getSuite, ans)));
         result.put("Infra Headers", ReportUtils.createInfraAndUserHeaders(tempTest, getSuite, "infraDetails"));
         result.put("User Details", ReportUtils.createInfraAndUserHeaders(tempTest, getSuite, "userDetails"));
         result.put("Execution details", ReportUtils.createExecutionDetailsHeaders(tempTest));
@@ -1080,28 +1082,32 @@ public class ReportUtils {
      * @return user
      */
     public static UserDto getUsernameAndIsDeleted(String username, Boolean deleted) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
         Map<String, Object> uriVariables = new HashMap<>();
         uriVariables.put("username", username);
         uriVariables.put("deleted", deleted);
-        try {
-            ResponseEntity response = restTemplate.exchange(userManagerUrl + "/userManagement/v1/username/deleted?username={username}&deleted={deleted}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            gson = new Gson();
-            Type type = new TypeToken<UserDto>() {
-            }.getType();
 
-            return gson.fromJson(gson.toJson(data), type);
-        } catch (RestClientException ex) {
+        String url = userManagerUrl + "/userManagement/v1/username/deleted?username={username}&deleted={deleted}";
+        try {
+            Response response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(null, getAuthHeader()),
+                    Response.class,
+                    uriVariables
+            ).getBody();
+
+            if(response != null && response.getOperation().equals(Success)) {
+                return mapper.convertValue(response.getData(), new TypeReference<>() {});
+            }
+        } catch (HttpClientErrorException.NotFound ex) {
             log.info("User details not found for username: {}, ", username);
             return null;
+        } catch (RestClientException ex) {
+            log.error(ex.getMessage());
+            throw new CustomDataException("Something went wrong. Please try again later !!",null,Failure, HttpStatus.OK);
+
         }
+        return null;
     }
 
     /**
@@ -1183,7 +1189,7 @@ public class ReportUtils {
             }.getType();
             projectRole = gson.fromJson(gson.toJson(data), type);
         } catch (HttpClientErrorException.NotFound ex) {
-            log.warn("Error occurred due to ProjectRole details not found for username: {}", username);
+            log.warn("Project Role details not found for username: {}", username);
             return null;
         }
         log.info("Project Role Details ==> {}", projectRole);
@@ -1984,176 +1990,6 @@ public class ReportUtils {
 
     }
 
-    public static Double getTimeRemainingNew(SuiteExeDto suite, List<List<DependencyTree>> ans) {
-        // TODO: 12/12/2023 this method is not working as expected. replace mongoOperations with rest calls on insertion manager. 
-        Double remaining_time = 0.0;
-
-        List<Criteria> criteria = new ArrayList<Criteria>();
-        Query query3 = new Query();
-        int counter = 0, exe_count = 0;
-        Long T3 = 0L;
-
-        Map<String, Long> testcaseHistory = new HashMap<>();
-        criteria.add(
-                Criteria.where("project_name").in(suite.getProject_name()).and("p_id").in(suite.getP_id()));
-
-        criteria.add(Criteria.where("env").in(suite.getEnv()));
-        criteria.add(Criteria.where("report_name").is(suite.getReport_name()));
-        criteria.add(Criteria.where("s_start_time").lt(suite.getS_start_time()));
-        query3.addCriteria(new Criteria().andOperator(criteria.toArray(new Criteria[criteria.size()])))
-                .with(Sort.by(Sort.Direction.DESC, "s_start_time")).limit(5);
-
-        List<SuiteExeDto> suites_T3 = mongoOperations.find(query3, SuiteExeDto.class);
-        if (suites_T3.size() == 0) {
-
-            return Double.valueOf(60);
-        }
-        List<TestExeDto> tests = new ArrayList<>();
-        List<String> testcase_details2 = new ArrayList<>();
-        for (SuiteExeDto suiteExe : suites_T3) {
-            Query query2 = new Query();
-
-            if (suiteExe.getStatus().equalsIgnoreCase("EXE")) {
-                exe_count++;
-                if (exe_count == suites_T3.size()) {
-
-                    return Double.valueOf(60);
-                }
-                continue;
-            }
-            if ((suiteExe.getTestcase_details() == null || suiteExe.getTestcase_details().size() == 0)) {
-                continue;
-            }
-            T3 += (suiteExe.getS_end_time() - suiteExe.getS_start_time());
-
-            counter++;
-            testcase_details2 = suiteExe.getTestcase_details();
-            if (testcase_details2 != null && !testcase_details2.isEmpty()) {
-
-                query2.addCriteria(Criteria.where("tc_run_id").in(testcase_details2));
-                tests = mongoOperations.find(query2, TestExeDto.class);
-                if (!tests.isEmpty()) {
-
-                    for (TestExeDto testExe : tests) {
-                        Long tempTime = 0L;
-
-                        tempTime += testExe.getEnd_time() - testExe.getStart_time();
-
-                        if (!testcaseHistory.isEmpty() && testcaseHistory.containsKey(testExe.getName())) {
-                            testcaseHistory.put(testExe.getName(),
-                                    (testcaseHistory.get(testExe.getName()) + tempTime));
-                        } else {
-                            testcaseHistory.put(testExe.getName(), tempTime);
-                        }
-
-                    }
-                }
-
-            }
-        }
-        for (String value : testcaseHistory.keySet()) {
-
-            testcaseHistory.put(value, (testcaseHistory.get(value)) / testcase_details2.size());
-
-        }
-        if (counter == 0) {
-            return 60.0;
-        }
-
-        remaining_time = (double) ((T3 / counter));
-        List<String> testcase_details = suite.getTestcase_details();
-
-        if (Objects.isNull(suite.getMode()) || suite.getMode().equalsIgnoreCase("sequence")) {
-
-            if (testcase_details == null) {
-
-                return (double) (remaining_time / 1000) + 60;
-            }
-            Query Q2 = new Query();
-
-            Q2.addCriteria(Criteria.where("tc_run_id").in(testcase_details));
-            tests = mongoOperations.find(Q2, TestExeDto.class);
-            if (tests != null && !tests.isEmpty()) {
-
-                Long temp = 0L;
-                for (TestExeDto testExe : tests) {
-
-                    if (testcaseHistory.containsKey(testExe.getName())) {
-                        temp += testcaseHistory.get(testExe.getName());
-
-                    }
-
-                }
-
-                remaining_time = (double) (remaining_time - temp) / 1000;
-                if (remaining_time < 0) {
-                    return 60.0;
-                }
-
-                return Math.abs(remaining_time + 60);
-            } else {
-                return 60.0;
-            }
-
-        } else {
-            Long temp = 0L;
-
-            Query query = new Query();
-
-            tests = new ArrayList<>();
-
-            if (ans == null || ans.size() == 0) {
-                return 60.0;
-            }
-            int i = 0;
-
-            temp = 0L;
-            if (testcase_details.isEmpty()) {
-
-                return (remaining_time / 1000) + 60;
-            } else {
-                query.addCriteria(Criteria.where("tc_run_id").in(testcase_details));
-                tests = mongoOperations.find(query, TestExeDto.class);
-
-                for (TestExeDto test : tests) {
-
-                    i = 0;
-                    for (List<DependencyTree> it : ans) {
-
-                        if (i == 0) {
-                            i++;
-                            continue;
-                        }
-                        Long testTime = 0L;
-                        for (DependencyTree et : it) {
-
-                            if (test.getName().equalsIgnoreCase(et.data.getName())
-                                    && testcaseHistory.containsKey(test.getName())
-                                    && testTime < testcaseHistory.get(test.getName())) {
-
-                                testTime = testcaseHistory.get(test.getName());
-
-                            }
-
-                        }
-                        temp += testTime;
-
-                    }
-
-                }
-
-                remaining_time = (remaining_time - temp) / 1000;
-
-                if (remaining_time < 0) {
-                    return 60.0;
-                }
-                return remaining_time + 60;
-
-            }
-        }
-
-    }
-
     public static List<String> headersDataRefactor(List<String> list) {
         List<String> finalList = new ArrayList<>();
         finalList.addAll(list);
@@ -2881,6 +2717,12 @@ public class ReportUtils {
         } else {
             return null;
         }
+    }
+
+    public static MultiValueMap<String, String> getAuthHeader() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
+        return headers;
     }
 
 }
