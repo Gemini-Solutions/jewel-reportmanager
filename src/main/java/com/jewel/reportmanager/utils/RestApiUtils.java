@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.jewel.reportmanager.dto.*;
 import com.jewel.reportmanager.enums.OperationType;
+import com.jewel.reportmanager.exception.CustomDataException;
 import com.mongodb.BasicDBObject;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -22,6 +23,8 @@ import org.springframework.web.client.RestTemplate;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.jewel.reportmanager.enums.OperationType.Failure;
 
 @Slf4j
 @Service
@@ -504,6 +507,40 @@ public class RestApiUtils {
             log.info("s_run_ids list is empty for pid: {}, category: {}, env: {}, reportName: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, category, env, reportName, s_start_time, s_end_time, pageNo, sort, sortedColumn);
             return Collections.EMPTY_LIST;
         }
+    }
+
+    public static Map<String, Object>  getSuiteTimelineDataset(long p_id, String category, String env, String reportName, long startTime, long endTime, Integer pageNo, Integer sort, String sortedColumn) {
+        String url = insertionManagerUrl + "/v2/suiteExe/suiteTimeline?p_id={p_id}&category={category}&env={env}&reportName={reportName}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
+        HttpEntity httpEntity = new HttpEntity(null, headers);
+        Map<String, Object> uriVariables = new HashMap<>();
+        uriVariables.put("p_id", p_id);
+        uriVariables.put("category", category);
+        uriVariables.put("env", env);
+        uriVariables.put("reportName", reportName);
+        uriVariables.put("s_start_time", startTime);
+        uriVariables.put("s_end_time", endTime);
+        uriVariables.put("pageNo", pageNo);
+        uriVariables.put("sort", sort);
+        uriVariables.put("sortedColumn", sortedColumn);
+        try {
+            ResponseEntity response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, Object.class, uriVariables);
+            Gson gson = new Gson();
+            String json = gson.toJson(response.getBody());
+            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+            }.getType());
+            Object data = convertedMap.get("data");
+            Type type = new TypeToken<Map<String, Object>>() {
+            }.getType();
+
+            return gson.fromJson(gson.toJson(data), type);
+        } catch (HttpClientErrorException.NotFound ex) {
+            log.error("unable to get suite timeline data for pid: {}, category: {}, env: {}, reportName: {}, "
+                            + "start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, category,
+                    env, reportName, startTime, endTime, pageNo, sort, sortedColumn);
+        }
+        throw new CustomDataException("Exeption while getting suite Timeline data", null, Failure, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 
