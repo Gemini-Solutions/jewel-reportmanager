@@ -21,6 +21,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static com.jewel.reportmanager.enums.OperationType.*;
 import static com.jewel.reportmanager.enums.StatusColor.*;
@@ -1196,7 +1199,7 @@ public class RuleService {
     }
 
     public Response getSuiteTimeline(Map<String, Object> payload, HttpServletRequest request, String category,
-            String search, Integer pageNo, Integer sort, String sortedColumn) throws ParseException {
+                                     String search, Integer pageNo, Integer sort, String sortedColumn) throws ParseException {
 
         UserDto user1 = ReportUtils.getUserDtoFromServetRequest();
 
@@ -1256,118 +1259,102 @@ public class RuleService {
         if (suiteData != null) {
             result.put("s_id", suiteData.getS_id());
         }
-        for (SuiteExeDto suiteExeDto : suiteReports) {
-            HashMap<String, Object> temp = new HashMap<>();
-            Map<String, Object> timeMap = new HashMap<>();
-            timeMap.put("subType", "datetime");
-            temp.put("Start Time", ReportUtils.createCustomObject(suiteExeDto.getS_start_time(), "date",
-                    suiteExeDto.getS_start_time(), "left", timeMap));
-            temp.put("Status",
-                    ReportUtils.createCustomObject(suiteExeDto.getStatus(), "status", suiteExeDto.getStatus(), "left"));
-            HashMap<String, Object> actionMap = new HashMap<>();
-            actionMap.put("subType", "execution_report");
-            temp.put("Action", ReportUtils.createCustomObject(suiteExeDto.getS_run_id(), "action",
-                    suiteExeDto.getS_run_id(), "center", actionMap));
 
-            Set<String> baseUserSet = new HashSet<>();
-            Set<String> tokenUserSet = new HashSet<>();
-            Set<String> runTypeSet = new HashSet<>();
-            Set<String> runModeSet = new HashSet<>();
-            Map<String, Object> statusMap = new HashMap<>();
+        List<Map<String, Object>> output = suiteReports.parallelStream().map(suiteExeDto -> {
+                    HashMap<String, Object> temp = new HashMap<>();
+                    Map<String, Object> timeMap = new HashMap<>();
+                    timeMap.put("subType", "datetime");
+                    temp.put("Start Time", ReportUtils.createCustomObject(suiteExeDto.getS_start_time(), "date",
+                            suiteExeDto.getS_start_time(), "left", timeMap));
+                    temp.put("Status", ReportUtils.createCustomObject(suiteExeDto.getStatus(), "status",
+                            suiteExeDto.getStatus(), "left"));
+                    HashMap<String, Object> actionMap = new HashMap<>();
+                    actionMap.put("subType", "execution_report");
+                    temp.put("Action", ReportUtils.createCustomObject(suiteExeDto.getS_run_id(), "action",
+                            suiteExeDto.getS_run_id(), "center", actionMap));
 
-            for (StatusColor statusColor : StatusColor.values()) {
-                statusMap.put(statusColor.toString(), 0L);
-            }
+                    Set<String> baseUserSet = ConcurrentHashMap.newKeySet();
+                    Set<String> tokenUserSet = ConcurrentHashMap.newKeySet();
+                    Set<String> runTypeSet = ConcurrentHashMap.newKeySet();
+                    Set<String> runModeSet = ConcurrentHashMap.newKeySet();
+                    Map<String, Object> statusMap = new ConcurrentHashMap<>();
 
-            if (!testcaseDetails.isEmpty()) {
-                long totalCount = 0L;
-                for (TestExeDto testExeDto : testcaseDetails) {
-                    if (!testExeDto.getS_run_id().equals(suiteExeDto.getS_run_id())) {
-                        continue;
+                    for (StatusColor statusColor : StatusColor.values()) {
+                        statusMap.put(statusColor.toString(), 0L);
                     }
-                    switch (testExeDto.getStatus().toUpperCase()) {
-                        case "PASS":
-                            if (testExeDto.getS_run_id().equals(suiteExeDto.getS_run_id())) {
-                                long value = Long.parseLong(statusMap.get(PASS.toString()).toString()) + 1;
-                                statusMap.put(PASS.toString(), value);
-                                totalCount++;
-                            }
-                            break;
-                        case "FAIL":
-                            if (testExeDto.getS_run_id().equals(suiteExeDto.getS_run_id())) {
-                                long value = Long.parseLong(statusMap.get(FAIL.toString()).toString()) + 1;
-                                statusMap.put(FAIL.toString(), value);
-                                totalCount++;
-                            }
-                            break;
-                        case "EXE":
-                            if (testExeDto.getS_run_id().equals(suiteExeDto.getS_run_id())) {
-                                long value = Long.parseLong(statusMap.get(EXE.toString()).toString()) + 1;
-                                statusMap.put(EXE.toString(), value);
-                                totalCount++;
-                            }
-                            break;
-                        case "ERR":
-                            if (testExeDto.getS_run_id().equals(suiteExeDto.getS_run_id())) {
-                                long value = Long.parseLong(statusMap.get(ERR.toString()).toString()) + 1;
-                                statusMap.put(ERR.toString(), value);
-                                totalCount++;
-                            }
-                            break;
-                        case "INFO":
-                            if (testExeDto.getS_run_id().equals(suiteExeDto.getS_run_id())) {
-                                long value = Long.parseLong(statusMap.get(StatusColor.INFO.toString()).toString()) + 1;
-                                statusMap.put(StatusColor.INFO.toString(), value);
-                                totalCount++;
-                            }
-                            break;
-                        case "WARN":
-                            if (testExeDto.getS_run_id().equals(suiteExeDto.getS_run_id())) {
-                                long value = Long.parseLong(statusMap.get(WARN.toString()).toString()) + 1;
-                                statusMap.put(WARN.toString(), value);
-                                totalCount++;
-                            }
-                            break;
+                    if (!testcaseDetails.isEmpty()) {
+                        AtomicLong totalCount = new AtomicLong(0L);
+                        testcaseDetails.parallelStream()
+                                .filter(testExeDto -> testExeDto.getS_run_id().equals(suiteExeDto.getS_run_id()))
+                                .forEach(testExeDto -> {
+                                    switch (testExeDto.getStatus().toUpperCase()) {
+                                        case "PASS":
+                                            statusMap.put(PASS.toString(), Long.parseLong(statusMap.get(PASS.toString()).toString()) + 1);
+                                            totalCount.getAndIncrement();
+                                            break;
+                                        case "FAIL": ;
+                                            statusMap.put(FAIL.toString(), Long.parseLong(statusMap.get(FAIL.toString()).toString()) + 1);
+                                            totalCount.getAndIncrement();
+                                            break;
+                                        case "EXE":
+                                            statusMap.put(EXE.toString(), Long.parseLong(statusMap.get(EXE.toString()).toString()) + 1);
+                                            totalCount.getAndIncrement();
+                                            break;
+                                        case "ERR":
+                                            statusMap.put(ERR.toString(), Long.parseLong(statusMap.get(ERR.toString()).toString()) + 1);
+                                            totalCount.getAndIncrement();
+                                            break;
+                                        case "INFO":
+                                            statusMap.put(INFO.toString(), Long.parseLong(statusMap.get(INFO.toString()).toString()) + 1);
+                                            totalCount.getAndIncrement();
+                                            break;
+                                        case "WARN":
+                                            statusMap.put(WARN.toString(), Long.parseLong(statusMap.get(WARN.toString()).toString()) + 1);
+                                            totalCount.getAndIncrement();
+                                            break;
+                                    }
+                                    if (testExeDto.getBase_user() != null) {
+                                        baseUserSet.add(testExeDto.getBase_user());
+                                    }
+                                    if (testExeDto.getToken_user() != null){
+                                        tokenUserSet.addAll(testExeDto.getToken_user());
+                                    }
+                                    runTypeSet.add(testExeDto.getRun_type());
+                                    runModeSet.add(testExeDto.getRun_mode());
+                                });
+
+
+                        if ((search != null && !(search.equals("") || search.equalsIgnoreCase("null"))
+                                && !verifySearch(search, tokenUserSet))) {
+                            return null;
+                        }
+                        HashMap<String, Object> statusSubType = new HashMap<>();
+                        statusSubType.put("subType", "timeline_tc");
+                        statusMap.put("TOTAL", totalCount.get());
+                        if (suiteExeDto.getStatus().equalsIgnoreCase("EXE")
+                                && totalCount.get() != suiteExeDto.getExpected_testcases()) {
+                            statusMap.put("EXE", suiteExeDto.getExpected_testcases() - totalCount.get());
+                        }
+                        if (suiteExeDto.getStatus().equalsIgnoreCase("ERR")
+                                && totalCount.get() != suiteExeDto.getExpected_testcases()) {
+                            statusMap.put("ERR", Long.parseLong(statusMap.get(ERR.toString()).toString())
+                                    + Math.abs(suiteExeDto.getExpected_testcases() - totalCount.get()));
+                        }
+                        temp.put("Testcases",
+                                ReportUtils.createCustomObject(statusMap, "crud", statusMap, "left", statusSubType));
+
                     }
+                    temp.put("Token User", ReportUtils.createCustomObject(tokenUserSet, "text", tokenUserSet, "left"));
+                    temp.put("Base User", ReportUtils.createCustomObject(baseUserSet, "text", baseUserSet, "left"));
+                    temp.put("Run Type", ReportUtils.createCustomObject(runTypeSet, "text", runTypeSet, "left"));
+                    temp.put("Run Mode", ReportUtils.createCustomObject(runModeSet, "text", runModeSet, "left"));
+                    return temp;
+                }).filter(map -> map != null)
+                .sorted(Comparator.comparing(map -> (long)((Map<String, Object>)map.get("Start Time")).get("value"), Comparator.reverseOrder())) // Sort by nested "Start Time" value
+                .collect(Collectors.toList());
 
-                    if (testExeDto.getBase_user() != null)
-                        baseUserSet.add(testExeDto.getBase_user());
-                    if (testExeDto.getToken_user() != null)
-                        tokenUserSet.addAll(testExeDto.getToken_user());
-                    runTypeSet.add(testExeDto.getRun_type());
-                    runModeSet.add(testExeDto.getRun_mode());
-
-                }
-                if ((search != null && !(search.equals("") || search.equalsIgnoreCase("null"))
-                        && !verifySearch(search, tokenUserSet))) {
-                    continue;
-                }
-                HashMap<String, Object> statusSubType = new HashMap<>();
-                statusSubType.put("subType", "timeline_tc");
-                statusMap.put("TOTAL", totalCount);
-                if (suiteExeDto.getStatus().equalsIgnoreCase("EXE")
-                        && totalCount != suiteExeDto.getExpected_testcases()) {
-                    statusMap.put("EXE", suiteExeDto.getExpected_testcases() - totalCount);
-                }
-                if (suiteExeDto.getStatus().equalsIgnoreCase("ERR")
-                        && totalCount != suiteExeDto.getExpected_testcases()) {
-                    statusMap.put("ERR", Long.parseLong(statusMap.get(ERR.toString()).toString())
-                            + Math.abs(suiteExeDto.getExpected_testcases() - totalCount));
-                }
-                temp.put("Testcases",
-                        ReportUtils.createCustomObject(statusMap, "crud", statusMap, "left", statusSubType));
-
-            }
-            temp.put("Token User", ReportUtils.createCustomObject(tokenUserSet, "text", tokenUserSet, "left"));
-            temp.put("Base User", ReportUtils.createCustomObject(baseUserSet, "text", baseUserSet, "left"));
-            temp.put("Run Type", ReportUtils.createCustomObject(runTypeSet, "text", runTypeSet, "left"));
-            temp.put("Run Mode", ReportUtils.createCustomObject(runModeSet, "text", runModeSet, "left"));
-            data.add(temp);
-        }
-        Collections.reverse(data);
-        result.put("data", data);
-
-        return new Response(result, data.size() + " record(s) fetched successfully", Success);
+        result.put("data", output);
+        return new Response(result, output.size() + " record(s) fetched successfully", Success);
     }
 
     private boolean verifySearch(String search, Set<String> tokenUserSet) {
