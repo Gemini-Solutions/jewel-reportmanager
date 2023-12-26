@@ -1008,7 +1008,7 @@ public class RestApiUtils {
 
             return gson.fromJson(gson.toJson(data), type);
         } catch (RestClientException ex) {
-            log.info("Error while fetching status wise count for s_run_id: {} and status: {}", s_run_id, status);
+            log.error("Error while fetching status wise count for s_run_id: {} and status: {} - {}", s_run_id, status,ex.getMessage());
             return null;
         }
     }
