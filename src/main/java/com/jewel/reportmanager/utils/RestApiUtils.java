@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.jewel.reportmanager.dto.*;
 import com.jewel.reportmanager.enums.OperationType;
+import com.jewel.reportmanager.exception.CustomDataException;
 import com.mongodb.BasicDBObject;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -22,6 +23,8 @@ import org.springframework.web.client.RestTemplate;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.jewel.reportmanager.enums.OperationType.Failure;
 
 @Slf4j
 @Service
@@ -415,22 +418,99 @@ public class RestApiUtils {
         }
     }
 
+//
+//    /**
+//     * Returns a list of suite exes for pid, category, env, reportName, startTime, endTime, page no., sort and sortedColumn.
+//     *
+//     * @param p_id
+//     * @param category
+//     * @param env
+//     * @param reportName
+//     * @param s_start_time
+//     * @param s_end_time
+//     * @param pageNo
+//     * @param sort
+//     * @param sortedColumn
+//     * @return List<SuiteExeDto>
+//     */
+//    public static List<SuiteExeDto> getSuiteExesForSuiteTimeline(Long p_id, String category, String env, String reportName, Long s_start_time, Long s_end_time, Integer pageNo, Integer sort, String sortedColumn) {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
+//        HttpEntity httpEntity = new HttpEntity(null, headers);
+//        Map<String, Object> uriVariables = new HashMap<>();
+//        uriVariables.put("p_id", p_id);
+//        uriVariables.put("category", category);
+//        uriVariables.put("env", env);
+//        uriVariables.put("reportName", reportName);
+//        uriVariables.put("s_start_time", s_start_time);
+//        uriVariables.put("s_end_time", s_end_time);
+//        uriVariables.put("pageNo", pageNo);
+//        uriVariables.put("sort", sort);
+//        uriVariables.put("sortedColumn", sortedColumn);
+//        try {
+//            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/suiteExe/suiteTimeline?p_id={p_id}&category={category}&env={env}&reportName={reportName}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
+//            Gson gson = new Gson();
+//            String json = gson.toJson(response.getBody());
+//            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+//            }.getType());
+//            Object data = convertedMap.get("data");
+//            Type type = new TypeToken<List<SuiteExeDto>>() {
+//            }.getType();
+//
+//            return gson.fromJson(gson.toJson(data), type);
+//        } catch (HttpClientErrorException.NotFound ex) {
+//            log.info("Suite exe list is empty for pid: {}, category: {}, env: {}, reportName: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, category, env, reportName, s_start_time, s_end_time, pageNo, sort, sortedColumn);
+//            return Collections.EMPTY_LIST;
+//        }
+//    }
+//
+//    /**
+//     * Returns a list of s_run_ids for pid, category, env, reportName, startTime, endTime, page no., sort and sortedColumn.
+//     *
+//     * @param p_id
+//     * @param category
+//     * @param env
+//     * @param reportName
+//     * @param s_start_time
+//     * @param s_end_time
+//     * @param pageNo
+//     * @param sort
+//     * @param sortedColumn
+//     * @return List<String>
+//     */
+//    public static List<String> getS_Run_IdsForSuiteTimeline(Long p_id, String category, String env, String reportName, Long s_start_time, Long s_end_time, Integer pageNo, Integer sort, String sortedColumn) {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
+//        HttpEntity httpEntity = new HttpEntity(null, headers);
+//        Map<String, Object> uriVariables = new HashMap<>();
+//        uriVariables.put("p_id", p_id);
+//        uriVariables.put("category", category);
+//        uriVariables.put("env", env);
+//        uriVariables.put("reportName", reportName);
+//        uriVariables.put("s_start_time", s_start_time);
+//        uriVariables.put("s_end_time", s_end_time);
+//        uriVariables.put("pageNo", pageNo);
+//        uriVariables.put("sort", sort);
+//        uriVariables.put("sortedColumn", sortedColumn);
+//        try {
+//            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/suiteExe/s_run_ids/suiteTimeline?p_id={p_id}&category={category}&env={env}&reportName={reportName}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
+//            Gson gson = new Gson();
+//            String json = gson.toJson(response.getBody());
+//            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+//            }.getType());
+//            Object data = convertedMap.get("data");
+//            Type type = new TypeToken<List<String>>() {
+//            }.getType();
+//
+//            return gson.fromJson(gson.toJson(data), type);
+//        } catch (HttpClientErrorException.NotFound ex) {
+//            log.info("s_run_ids list is empty for pid: {}, category: {}, env: {}, reportName: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, category, env, reportName, s_start_time, s_end_time, pageNo, sort, sortedColumn);
+//            return Collections.EMPTY_LIST;
+//        }
+//    }
 
-    /**
-     * Returns a list of suite exes for pid, category, env, reportName, startTime, endTime, page no., sort and sortedColumn.
-     *
-     * @param p_id
-     * @param category
-     * @param env
-     * @param reportName
-     * @param s_start_time
-     * @param s_end_time
-     * @param pageNo
-     * @param sort
-     * @param sortedColumn
-     * @return List<SuiteExeDto>
-     */
-    public static List<SuiteExeDto> getSuiteExesForSuiteTimeline(Long p_id, String category, String env, String reportName, Long s_start_time, Long s_end_time, Integer pageNo, Integer sort, String sortedColumn) {
+    public static Map<String, Object>  getSuiteTimelineDataset(long p_id, String category, String env, String reportName, long startTime, long endTime, Integer pageNo, Integer sort, String sortedColumn) {
+        String url = insertionManagerUrl + "/v2/suiteExe/suiteTimeline?p_id={p_id}&category={category}&env={env}&reportName={reportName}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}";
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
         HttpEntity httpEntity = new HttpEntity(null, headers);
@@ -439,71 +519,28 @@ public class RestApiUtils {
         uriVariables.put("category", category);
         uriVariables.put("env", env);
         uriVariables.put("reportName", reportName);
-        uriVariables.put("s_start_time", s_start_time);
-        uriVariables.put("s_end_time", s_end_time);
+        uriVariables.put("s_start_time", startTime);
+        uriVariables.put("s_end_time", endTime);
         uriVariables.put("pageNo", pageNo);
         uriVariables.put("sort", sort);
         uriVariables.put("sortedColumn", sortedColumn);
         try {
-            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/suiteExe/suiteTimeline?p_id={p_id}&category={category}&env={env}&reportName={reportName}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
+            ResponseEntity response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, Object.class, uriVariables);
             Gson gson = new Gson();
             String json = gson.toJson(response.getBody());
             Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
             }.getType());
             Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<SuiteExeDto>>() {
+            Type type = new TypeToken<Map<String, Object>>() {
             }.getType();
 
             return gson.fromJson(gson.toJson(data), type);
         } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Suite exe list is empty for pid: {}, category: {}, env: {}, reportName: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, category, env, reportName, s_start_time, s_end_time, pageNo, sort, sortedColumn);
-            return Collections.EMPTY_LIST;
+            log.error("unable to get suite timeline data for pid: {}, category: {}, env: {}, reportName: {}, "
+                            + "start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, category,
+                    env, reportName, startTime, endTime, pageNo, sort, sortedColumn);
         }
-    }
-
-    /**
-     * Returns a list of s_run_ids for pid, category, env, reportName, startTime, endTime, page no., sort and sortedColumn.
-     *
-     * @param p_id
-     * @param category
-     * @param env
-     * @param reportName
-     * @param s_start_time
-     * @param s_end_time
-     * @param pageNo
-     * @param sort
-     * @param sortedColumn
-     * @return List<String>
-     */
-    public static List<String> getS_Run_IdsForSuiteTimeline(Long p_id, String category, String env, String reportName, Long s_start_time, Long s_end_time, Integer pageNo, Integer sort, String sortedColumn) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
-        Map<String, Object> uriVariables = new HashMap<>();
-        uriVariables.put("p_id", p_id);
-        uriVariables.put("category", category);
-        uriVariables.put("env", env);
-        uriVariables.put("reportName", reportName);
-        uriVariables.put("s_start_time", s_start_time);
-        uriVariables.put("s_end_time", s_end_time);
-        uriVariables.put("pageNo", pageNo);
-        uriVariables.put("sort", sort);
-        uriVariables.put("sortedColumn", sortedColumn);
-        try {
-            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v1/suiteExe/s_run_ids/suiteTimeline?p_id={p_id}&category={category}&env={env}&reportName={reportName}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<List<String>>() {
-            }.getType();
-
-            return gson.fromJson(gson.toJson(data), type);
-        } catch (HttpClientErrorException.NotFound ex) {
-            log.info("s_run_ids list is empty for pid: {}, category: {}, env: {}, reportName: {}, start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, category, env, reportName, s_start_time, s_end_time, pageNo, sort, sortedColumn);
-            return Collections.EMPTY_LIST;
-        }
+        throw new CustomDataException("Exeption while getting suite Timeline data", null, Failure, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 
@@ -616,36 +653,36 @@ public class RestApiUtils {
         }
     }
 
-    /**
-     * Returns suite from reportName and status
-     *
-     * @param reportName
-     * @param status
-     * @return SuiteRun
-     */
-    public static SuiteDto getSuiteByReportNameAndStatus(String reportName, String status) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
-        Map<String, Object> uriVariables = new HashMap<>();
-        uriVariables.put("reportName", reportName);
-        uriVariables.put("status", status);
-        try {
-            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v2/suite/reportName/status?reportName={reportName}&status={status}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
-            Gson gson = new Gson();
-            String json = gson.toJson(response.getBody());
-            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-            }.getType());
-            Object data = convertedMap.get("data");
-            Type type = new TypeToken<SuiteDto>() {
-            }.getType();
-
-            return gson.fromJson(gson.toJson(data), type);
-        } catch (HttpClientErrorException.NotFound ex) {
-            log.info("Suite is empty for reportName: {} and status: {}", reportName, status);
-            return null;
-        }
-    }
+//    /**
+//     * Returns suite from reportName and status
+//     *
+//     * @param reportName
+//     * @param status
+//     * @return SuiteRun
+//     */
+//    public static SuiteDto getSuiteByReportNameAndStatus(String reportName, String status) {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
+//        HttpEntity httpEntity = new HttpEntity(null, headers);
+//        Map<String, Object> uriVariables = new HashMap<>();
+//        uriVariables.put("reportName", reportName);
+//        uriVariables.put("status", status);
+//        try {
+//            ResponseEntity response = restTemplate.exchange(insertionManagerUrl + "/v2/suite/reportName/status?reportName={reportName}&status={status}", HttpMethod.GET, httpEntity, Object.class, uriVariables);
+//            Gson gson = new Gson();
+//            String json = gson.toJson(response.getBody());
+//            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+//            }.getType());
+//            Object data = convertedMap.get("data");
+//            Type type = new TypeToken<SuiteDto>() {
+//            }.getType();
+//
+//            return gson.fromJson(gson.toJson(data), type);
+//        } catch (HttpClientErrorException.NotFound ex) {
+//            log.info("Suite is empty for reportName: {} and status: {}", reportName, status);
+//            return null;
+//        }
+//    }
 
     /**
      * Returns project from realCompanyName, projectName and status.

@@ -1,5 +1,7 @@
 package com.jewel.reportmanager.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jewel.reportmanager.dto.*;
 import com.jewel.reportmanager.dto.RuleApi;
 import com.jewel.reportmanager.enums.StatusColor;
@@ -1232,17 +1234,25 @@ public class RuleService {
             throw new CustomDataException(PAGE_NO_CANNOT_BE_NEGATIVE_OR_ZERO, null, Failure, HttpStatus.OK);
         }
 
-        List<SuiteExeDto> suiteReports = RestApiUtils.getSuiteExesForSuiteTimeline(getSuite.getP_id(), category,
+        Map<String, Object> suiteAndTestData = RestApiUtils.getSuiteTimelineDataset(getSuite.getP_id(), category,
                 getSuite.getEnv(), getSuite.getReport_name(), starttime, endtime, pageNo, sort, sortedColumn);
+        ObjectMapper om = new ObjectMapper();
+
+        List<SuiteExeDto> suiteReports = om.convertValue(suiteAndTestData.get("suiteReports"), new TypeReference<>() {});
+        List<TestExeDto> testcaseDetails = om.convertValue(suiteAndTestData.get("testcaseDetails"), new TypeReference<>() {});
+        SuiteDto suiteData = om.convertValue(suiteAndTestData.get("suiteData"), new TypeReference<>() {});
+
+//        List<SuiteExeDto> suiteReports = RestApiUtils.getSuiteExesForSuiteTimeline(getSuite.getP_id(), category,
+//                getSuite.getEnv(), getSuite.getReport_name(), starttime, endtime, pageNo, sort, sortedColumn);
+//        List<String> sRunIds = RestApiUtils.getS_Run_IdsForSuiteTimeline(getSuite.getP_id(), category,
+//                getSuite.getEnv(), getSuite.getReport_name(), starttime, endtime, pageNo, sort, sortedColumn);
+//
+//        List<TestExeDto> testcaseDetails = RestApiUtils.getTestExeListForS_run_ids(sRunIds);
+//        SuiteDto suiteData = RestApiUtils.getSuiteByReportNameAndStatus(getSuite.getReport_name(), ACTIVE_STATUS);
         if (suiteReports.isEmpty()) {
             result.put("data", data);
             return new Response(result, NO_RECORDS_FOUND, Success);
         }
-        List<String> sRunIds = RestApiUtils.getS_Run_IdsForSuiteTimeline(getSuite.getP_id(), category,
-                getSuite.getEnv(), getSuite.getReport_name(), starttime, endtime, pageNo, sort, sortedColumn);
-
-        List<TestExeDto> testcaseDetails = RestApiUtils.getTestExeListForS_run_ids(sRunIds);
-        SuiteDto suiteData = RestApiUtils.getSuiteByReportNameAndStatus(getSuite.getReport_name(), ACTIVE_STATUS);
         if (suiteData != null) {
             result.put("s_id", suiteData.getS_id());
         }
