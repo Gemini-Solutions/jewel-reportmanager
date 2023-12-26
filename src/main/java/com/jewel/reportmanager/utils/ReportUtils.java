@@ -1189,7 +1189,7 @@ public class ReportUtils {
             }.getType();
             projectRole = gson.fromJson(gson.toJson(data), type);
         } catch (HttpClientErrorException.NotFound ex) {
-            log.warn("Error occurred due to ProjectRole details not found for username: {}", username);
+            log.warn("Project Role details not found for username: {}", username);
             return null;
         }
         log.info("Project Role Details ==> {}", projectRole);
