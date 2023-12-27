@@ -1,5 +1,6 @@
 package com.jewel.reportmanager.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,6 +32,12 @@ public class SuiteDto {
     private String updated_by;
 
     private String status;
+    @JsonIgnore
+    private long jobs_scheduled;
+    @JsonIgnore
+    private String jar_link;
+    @JsonIgnore
+    private Email email;
 
     private long testcaseCount;
 
