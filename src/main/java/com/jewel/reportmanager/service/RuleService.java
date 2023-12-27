@@ -1009,7 +1009,6 @@ public class RuleService {
             Map<String, Object> result = new HashMap<>();
             if (getSuite.getStatus().equalsIgnoreCase("EXE")) {
                 String expectedStatus = "PASS";
-                int currentPriority = Integer.MAX_VALUE;
                 result.put("status", getSuite.getStatus());
 
                 Map<String, Object> testcaseDetails = new HashMap<>();
@@ -1045,7 +1044,6 @@ public class RuleService {
                             statusFilterMap,
                             testcaseDetailsData,
                             getSuite,
-                            currentPriority,
                             expectedStatus,
                             result,
                             project);

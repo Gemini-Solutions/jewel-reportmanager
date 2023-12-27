@@ -511,9 +511,7 @@ public class RestApiUtils {
 
     public static Map<String, Object>  getSuiteTimelineDataset(long p_id, String category, String env, String reportName, long startTime, long endTime, Integer pageNo, Integer sort, String sortedColumn) {
         String url = insertionManagerUrl + "/v2/suiteExe/suiteTimeline?p_id={p_id}&category={category}&env={env}&reportName={reportName}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(SecurityContextHolder.getContext().getAuthentication().getCredentials().toString());
-        HttpEntity httpEntity = new HttpEntity(null, headers);
+        HttpEntity httpEntity = new HttpEntity(null, ReportUtils.getAuthHeader());
         Map<String, Object> uriVariables = new HashMap<>();
         uriVariables.put("p_id", p_id);
         uriVariables.put("category", category);
@@ -541,6 +539,29 @@ public class RestApiUtils {
                     env, reportName, startTime, endTime, pageNo, sort, sortedColumn);
         }
         throw new CustomDataException("Exeption while getting suite Timeline data", null, Failure, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    public static Map<String, Object>  getCountByStatusList(List<String> statuses,
+                                                             String s_run_id) {
+        String url = insertionManagerUrl + "/v1/testExe/testcaseInfo/" + s_run_id;
+        HttpEntity<?> httpEntity = new HttpEntity<>(statuses, ReportUtils.getAuthHeader());
+        try {
+            ResponseEntity<Response> response = restTemplate.exchange(url, HttpMethod.POST, httpEntity, Response.class);
+            if(response.getStatusCode() == HttpStatus.OK){
+                Gson gson = new Gson();
+                String json = gson.toJson(response.getBody());
+                Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+                }.getType());
+                Object data = convertedMap.get("data");
+                Type type = new TypeToken<Map<String, Object>>() {
+                }.getType();
+
+                return gson.fromJson(gson.toJson(data), type);
+            }
+        } catch (HttpClientErrorException ex) {
+            log.error("unable to fetch status count for s_run_id: {}", s_run_id);
+        }
+        throw new CustomDataException("Exception while fetching status count", null, Failure, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 

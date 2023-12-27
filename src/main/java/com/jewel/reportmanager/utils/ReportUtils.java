@@ -829,7 +829,6 @@ public class ReportUtils {
             Map<String, List<Map<String, Object>>> statusFilterMap,
             List<Map<String, Object>> testcaseDetailsData,
             SuiteExeDto getSuite,
-            int currentPriority,
             String expectedStatus,
             Map<String, Object> result,
             ProjectDto project
@@ -935,32 +934,10 @@ public class ReportUtils {
         testcaseDetails.put("data", testcaseDetailsData);
         testcaseDetails.put("headers", testcaseDetailsHeaders);
 
-        Map<String, Long> testcaseInfo = new TreeMap<>(Collections.reverseOrder());
-        for (String status : statuses) {
-            testcaseInfo.put(status, RestApiUtils.getStatusWiseCount(getSuite.getS_run_id(), status));
-            if (StatusColor.valueOf(status.toUpperCase()).priority < currentPriority) {
-                log.info(
-                        StatusColor.valueOf(status.toUpperCase()).priority + "-----" + currentPriority);
-                expectedStatus = status.toUpperCase();
-                currentPriority = StatusColor.valueOf(status.toUpperCase()).priority;
-                log.info("------" + StatusColor.valueOf(status.toUpperCase()).priority);
-            }
-        }
-//        Long sumOthers = 0L;
-//
-//        Iterator<Map.Entry<String, Long>> iterator = testcaseInfo.entrySet().iterator();
-//
-//        while (iterator.hasNext()) {
-//
-//            Map.Entry<String, Long> entry = iterator.next();
-//
-//            if (!List.of("PASS", "FAIL").contains(entry.getKey())){
-//                sumOthers += entry.getValue();
-//                iterator.remove();
-//            }
-//        }
-//
-//        testcaseInfo.put("OTHERS", sumOthers);
+        Map<String, Object> response = RestApiUtils.getCountByStatusList(statuses,getSuite.getS_run_id());
+        ObjectMapper om = new ObjectMapper();
+        Map<String, Long> testcaseInfo = om.convertValue(response.get("testcaseInfo"), new TypeReference<>() {});
+        expectedStatus = om.convertValue(response.get("expectedStatus"), new TypeReference<>() {});
 
         if (expectedStatus.equalsIgnoreCase("EXE")) {
             expectedStatus = "PASS";
