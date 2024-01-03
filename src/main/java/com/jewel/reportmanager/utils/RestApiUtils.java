@@ -769,18 +769,13 @@ public class RestApiUtils {
      * @return List<TestExeDto>
      */
     public static List<TestExeDto> getTestExeListForS_run_ids(List<String> s_run_ids) {
-        Map<String, Object> uriVariables = new HashMap<>();
-        String str_s_run_ids = s_run_ids.stream().map(Object::toString).collect(Collectors.joining(","));
-        uriVariables.put("s_run_ids", str_s_run_ids);
-
-        String url = insertionManagerUrl + "/v1/testExe?s_run_ids={s_run_ids}";
+        String url = insertionManagerUrl + "/testExeLists";
         try {
             Response response = restTemplate.exchange(
                     url,
-                    HttpMethod.GET,
-                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
-                    Response.class,
-                    uriVariables
+                    HttpMethod.POST,
+                    new HttpEntity<>(s_run_ids, ReportUtils.getAuthHeader()),
+                    Response.class
             ).getBody();
             if(response != null && response.getOperation().equals(OperationType.Success)) {
                 List<?> testExes = (List<?>) response.getData();
