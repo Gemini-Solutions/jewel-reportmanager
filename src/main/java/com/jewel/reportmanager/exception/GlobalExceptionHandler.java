@@ -70,7 +70,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({Exception.class})
     public ResponseEntity<Object> handleAll(final Exception ex) {
-        log.error("Exception occurred: {}",ex.getMessage());
+        log.error("Exception occurred: ",ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(null, "Exception occurred. Please try again later.", Failure));
     }
 }
