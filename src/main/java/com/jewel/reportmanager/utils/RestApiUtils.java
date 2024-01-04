@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.jewel.reportmanager.dto.*;
 import com.jewel.reportmanager.enums.OperationType;
+import com.jewel.reportmanager.exception.CustomDataException;
 import com.mongodb.BasicDBObject;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -22,6 +23,8 @@ import org.springframework.web.client.RestTemplate;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.jewel.reportmanager.enums.OperationType.Failure;
 
 @Slf4j
 @Service
@@ -506,6 +509,61 @@ public class RestApiUtils {
         }
     }
 
+    public static Map<String, Object>  getSuiteTimelineDataset(long p_id, String category, String env, String reportName, long startTime, long endTime, Integer pageNo, Integer sort, String sortedColumn) {
+        String url = insertionManagerUrl + "/v2/suiteExe/suiteTimeline?p_id={p_id}&category={category}&env={env}&reportName={reportName}&s_start_time={s_start_time}&s_end_time={s_end_time}&pageNo={pageNo}&sort={sort}&sortedColumn={sortedColumn}";
+        HttpEntity httpEntity = new HttpEntity(null, ReportUtils.getAuthHeader());
+        Map<String, Object> uriVariables = new HashMap<>();
+        uriVariables.put("p_id", p_id);
+        uriVariables.put("category", category);
+        uriVariables.put("env", env);
+        uriVariables.put("reportName", reportName);
+        uriVariables.put("s_start_time", startTime);
+        uriVariables.put("s_end_time", endTime);
+        uriVariables.put("pageNo", pageNo);
+        uriVariables.put("sort", sort);
+        uriVariables.put("sortedColumn", sortedColumn);
+        try {
+            ResponseEntity response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, Object.class, uriVariables);
+            Gson gson = new Gson();
+            String json = gson.toJson(response.getBody());
+            Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+            }.getType());
+            Object data = convertedMap.get("data");
+            Type type = new TypeToken<Map<String, Object>>() {
+            }.getType();
+
+            return gson.fromJson(gson.toJson(data), type);
+        } catch (HttpClientErrorException.NotFound ex) {
+            log.error("unable to get suite timeline data for pid: {}, category: {}, env: {}, reportName: {}, "
+                            + "start time: {}, end time: {} pageNo: {}, sort: {} and sortedColumn: {}", p_id, category,
+                    env, reportName, startTime, endTime, pageNo, sort, sortedColumn);
+        }
+        throw new CustomDataException("Exeption while getting suite Timeline data", null, Failure, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    public static Map<String, Object>  getCountByStatusList(List<String> statuses,
+                                                             String s_run_id) {
+        String url = insertionManagerUrl + "/v1/testExe/testcaseInfo/" + s_run_id;
+        HttpEntity<?> httpEntity = new HttpEntity<>(statuses, ReportUtils.getAuthHeader());
+        try {
+            ResponseEntity<Response> response = restTemplate.exchange(url, HttpMethod.POST, httpEntity, Response.class);
+            if(response.getStatusCode() == HttpStatus.OK){
+                Gson gson = new Gson();
+                String json = gson.toJson(response.getBody());
+                Map<String, Object> convertedMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+                }.getType());
+                Object data = convertedMap.get("data");
+                Type type = new TypeToken<Map<String, Object>>() {
+                }.getType();
+
+                return gson.fromJson(gson.toJson(data), type);
+            }
+        } catch (HttpClientErrorException ex) {
+            log.error("unable to fetch status count for s_run_id: {}", s_run_id);
+        }
+        throw new CustomDataException("Exception while fetching status count", null, Failure, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
 
     /**
      * Returns a count of suite exe for pid, env, startTime, endTime and page no.
@@ -711,18 +769,13 @@ public class RestApiUtils {
      * @return List<TestExeDto>
      */
     public static List<TestExeDto> getTestExeListForS_run_ids(List<String> s_run_ids) {
-        Map<String, Object> uriVariables = new HashMap<>();
-        String str_s_run_ids = s_run_ids.stream().map(Object::toString).collect(Collectors.joining(","));
-        uriVariables.put("s_run_ids", str_s_run_ids);
-
-        String url = insertionManagerUrl + "/v1/testExe?s_run_ids={s_run_ids}";
+        String url = insertionManagerUrl + "/testExeLists";
         try {
             Response response = restTemplate.exchange(
                     url,
-                    HttpMethod.GET,
-                    new HttpEntity<>(null, ReportUtils.getAuthHeader()),
-                    Response.class,
-                    uriVariables
+                    HttpMethod.POST,
+                    new HttpEntity<>(s_run_ids, ReportUtils.getAuthHeader()),
+                    Response.class
             ).getBody();
             if(response != null && response.getOperation().equals(OperationType.Success)) {
                 List<?> testExes = (List<?>) response.getData();
