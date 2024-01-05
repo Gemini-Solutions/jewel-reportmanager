@@ -953,10 +953,11 @@ public class ReportUtils {
 
         SuiteRun suiteRunData = RestApiUtils.getSuiteRun(getSuite.getS_run_id());
         List<List<DependencyTree>> ans = new ArrayList<>();
-        assert suiteRunData != null;
-        for (SuiteRunValues suiteRunValues : suiteRunData.getValues()) {
-            if (suiteRunValues.getExpected_testcases() != null) {
-                ans.addAll(suiteRunValues.getExpected_testcases());
+        if(suiteRunData != null) {
+            for (SuiteRunValues suiteRunValues : suiteRunData.getValues()) {
+                if (suiteRunValues.getExpected_testcases() != null) {
+                    ans.addAll(suiteRunValues.getExpected_testcases());
+                }
             }
         }
         exeData.put("testcase_progress", testcaseProgress);
