@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({NullPointerException.class, IllegalArgumentException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<Object> handleValidationExceptions(Exception ex) {
-        log.error("Exception occurred: {}",ex.getMessage());
+        log.error("Exception occurred: ",ex);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(null, INVALID_DATA, Failure));
     }
 
